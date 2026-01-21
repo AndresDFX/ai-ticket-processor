@@ -51,7 +51,9 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
 ## 🎨 Mejoras en el Frontend
 
 ### UX/UI Enhancements
-- **Tema Oscuro Accesible**: Paleta de colores consistente con alto contraste y soporte para navegación por teclado.
+- **Tema Oscuro/Claro**: Toggle completo entre modos oscuro y claro con persistencia local.
+- **Header Moderno**: Banner con gradiente azul, logo mejorado y toggle de tema integrado.
+- **Logo Rediseñado**: SVG personalizado representando IA y soporte con gradientes.
 - **Animaciones Suaves**: Entradas y salidas animadas con Framer Motion para una experiencia fluida.
 - **Notificaciones Toast**: Feedback visual inmediato para acciones exitosas, errores y eventos en tiempo real.
 - **Modal de Detalles**: Vista expandida de tickets con información completa en un modal centrado.
