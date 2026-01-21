@@ -1,0 +1,70 @@
+{
+  "name": "Vivatori Support Co-Pilot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vivatori-support-webhook",
+        "responseMode": "onReceived"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://YOUR_API_URL/process-ticket",
+        "method": "POST",
+        "sendBody": true,
+        "jsonParameters": true,
+        "bodyParametersJson": "{\"description\": \"={{$json[\\\"description\\\"]}}\", \"ticket_id\": \"={{$json[\\\"id\\\"]}}\"}"
+      },
+      "name": "Process Ticket API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"sentiment\"]}}",
+              "operation": "equals",
+              "value2": "Negativo"
+            }
+          ]
+        }
+      },
+      "name": "If Sentiment Negative",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "qa@vivatori.local",
+        "toEmail": "qa-team@vivatori.local",
+        "subject": "Nuevo ticket negativo",
+        "text": "Se detectó un ticket con sentimiento negativo. Revisar el dashboard."
+      },
+      "name": "Send Email (Simulado)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [920, 220]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{"node": "Process Ticket API", "type": "main", "index": 0}]]
+    },
+    "Process Ticket API": {
+      "main": [[{"node": "If Sentiment Negative", "type": "main", "index": 0}]]
+    },
+    "If Sentiment Negative": {
+      "main": [[{"node": "Send Email (Simulado)", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false
+}
