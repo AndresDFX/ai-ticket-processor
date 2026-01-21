@@ -14,8 +14,6 @@ from langchain_community.llms import HuggingFaceHub
 load_dotenv()
 
 app = FastAPI(title="Vivatori AI Support Co-Pilot")
-
-# CORS para permitir requests del frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # En producción, especifica el dominio del frontend
@@ -70,7 +68,6 @@ def classify_with_rules(text: str) -> dict:
 
 
 def parse_json_from_text(text: str) -> dict:
-    # Busca el primer bloque JSON en la respuesta
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if not match:
         raise ValueError("No JSON found in response")
@@ -101,13 +98,11 @@ def classify_ticket(description: str) -> dict:
 
 
 def notify_n8n_if_negative(description: str, category: str, sentiment: str, ticket_id: Optional[str] = None):
-    """Notifica a n8n si el sentimiento es negativo para enviar email de alerta"""
     if sentiment.lower() != "negativo":
         return
     
     n8n_webhook_url = os.getenv("N8N_WEBHOOK_URL")
     if not n8n_webhook_url:
-        # Si no está configurado, no hace nada (no es crítico)
         return
     
     try:
@@ -119,7 +114,6 @@ def notify_n8n_if_negative(description: str, category: str, sentiment: str, tick
         if ticket_id:
             payload["id"] = ticket_id
         
-        # Llamada asíncrona, no bloquea la respuesta
         requests.post(
             n8n_webhook_url,
             json=payload,
@@ -127,7 +121,6 @@ def notify_n8n_if_negative(description: str, category: str, sentiment: str, tick
             headers={"Content-Type": "application/json"}
         )
     except Exception as e:
-        # Log del error pero no falla el procesamiento del ticket
         print(f"Warning: No se pudo notificar a n8n: {e}")
 
 
@@ -138,7 +131,6 @@ def health():
 
 @app.post("/create-ticket", response_model=dict)
 def create_ticket(ticket: TicketIn):
-    """Crea un ticket en Supabase y lo procesa automáticamente"""
     if not ticket.description:
         raise HTTPException(status_code=400, detail="description is required")
 
@@ -146,7 +138,6 @@ def create_ticket(ticket: TicketIn):
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase not configured")
 
-    # Crear ticket en Supabase
     ticket_data = {
         "description": ticket.description,
         "processed": False,
@@ -158,10 +149,8 @@ def create_ticket(ticket: TicketIn):
     
     ticket_id = result.data[0]["id"]
 
-    # Procesar el ticket
     classification = classify_ticket(ticket.description)
     
-    # Actualizar con la clasificación
     supabase.table("tickets").update(
         {
             "category": classification["category"],
@@ -170,7 +159,6 @@ def create_ticket(ticket: TicketIn):
         }
     ).eq("id", ticket_id).execute()
 
-    # Notificar a n8n si el sentimiento es negativo
     notify_n8n_if_negative(
         ticket.description,
         classification["category"],
@@ -188,14 +176,12 @@ def create_ticket(ticket: TicketIn):
 
 @app.post("/process-ticket", response_model=TicketOut)
 def process_ticket(ticket: TicketIn):
-    """Procesa un ticket existente (por ID) o solo clasifica si no hay ID"""
     if not ticket.description:
         raise HTTPException(status_code=400, detail="description is required")
 
     result = classify_ticket(ticket.description)
     processed = True
 
-    # Update in Supabase if ticket_id provided
     supabase = get_supabase()
     if ticket.ticket_id and supabase:
         supabase.table("tickets").update(
@@ -206,7 +192,6 @@ def process_ticket(ticket: TicketIn):
             }
         ).eq("id", ticket.ticket_id).execute()
 
-    # Notificar a n8n si el sentimiento es negativo
     notify_n8n_if_negative(
         ticket.description,
         result["category"],

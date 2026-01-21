@@ -47,14 +47,25 @@ curl -X POST http://localhost:8001/create-ticket \
 2. En otra terminal, crea un ticket vía API (Test 3)
 3. **Esperado**: El ticket aparece automáticamente sin refrescar
 
-### Test 5: Seed de Datos
+### Test 5: Notificación n8n (correo)
+**Precondiciones**:
+- `N8N_WEBHOOK_URL` configurada en la API
+- Workflow activo en n8n Cloud
+- Nodo Email con credenciales SMTP de Gmail
+
+1. Crea un ticket negativo desde el frontend:
+   - Ejemplo: "No funciona el login y estoy muy molesto con este problema terrible"
+2. Verifica en n8n → **Executions** que el workflow se ejecutó
+3. **Esperado**: llega un email con formato HTML y los datos del ticket
+
+### Test 6: Seed de Datos
 ```bash
 chmod +x seed-api.sh
 ./seed-api.sh
 ```
 **Esperado**: 3 tickets creados y procesados
 
-### Test 6: Clasificación por Reglas (sin LLM)
+### Test 7: Clasificación por Reglas (sin LLM)
 Si no configuraste `HF_API_TOKEN`, el sistema usa reglas:
 - "No funciona el login" → Técnico, Negativo
 - "Necesito factura" → Facturación, Neutral
@@ -86,6 +97,12 @@ docker compose logs frontend
 ### La API no procesa tickets
 - Verifica `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` en `python-api/.env`
 - Sin `HF_API_TOKEN`, el sistema usa reglas (funciona pero menos preciso)
+
+### No llega el correo de n8n
+- Verifica que el workflow esté **Active**
+- Verifica que `N8N_WEBHOOK_URL` esté configurada en la API
+- Revisa el log del nodo Email en **Executions**
+- Confirma que el correo use `{{ $json.body.* }}` en el template
 
 ## 📊 Verificación en Supabase
 

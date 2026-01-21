@@ -118,7 +118,7 @@ alter publication supabase_realtime add table public.tickets;
 
 ### ⚡ Funcionamiento Automático
 
-**Importante**: La API ahora llama automáticamente al webhook de n8n cuando detecta un ticket con sentimiento **"Negativo"**. No necesitas llamar manualmente al webhook.
+La API llama automáticamente al webhook de n8n cuando detecta un ticket con sentimiento **"Negativo"**.
 
 **Flujo automático**:
 1. Usuario crea un ticket desde el frontend (o vía API)
@@ -127,7 +127,7 @@ alter publication supabase_realtime add table public.tickets;
 4. n8n recibe el webhook, procesa y envía email de alerta
 
 **Payload que recibe n8n desde la API**:
-- `description`, `category`, `sentiment`, `id`
+- `body.description`, `body.category`, `body.sentiment`, `body.id`
 - Opcional: `email_from`, `email_to`, `email_subject` (para sobreescribir el correo)
 
 ### Opción A: n8n Cloud (Recomendado para producción)
@@ -148,17 +148,18 @@ alter publication supabase_realtime add table public.tickets;
    - **Port**: `587`
    - **Secure**: `TLS`
    - **Sender Email**: Tu email de Gmail
-4. Configura el email:
-   - **From Email**: Tu email de Gmail
-   - **To Email**: Email donde quieres recibir alertas
+4. Configura el email (ya viene con valores Gmail por defecto en el workflow):
+   - **From Email**: `tu-email@gmail.com`
+   - **To Email**: `tu-email@gmail.com`
    - **Subject**: `⚠️ Ticket con sentimiento negativo - Vivatori`
-   - **Email Body**: 
+   - **Email Body** (usar modo expresión):
      ```
      Se ha recibido un ticket con sentimiento negativo:
      
-     Descripción: {{ $json.description }}
-     Categoría: {{ $json.category }}
-     Sentimiento: {{ $json.sentiment }}
+     Descripción: {{ $json.body.description }}
+     Categoría: {{ $json.body.category }}
+     Sentimiento: {{ $json.body.sentiment }}
+     ID del Ticket: {{ $json.body.id }}
      
      Por favor, revisar con prioridad.
      ```

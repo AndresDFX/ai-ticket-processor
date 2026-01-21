@@ -37,8 +37,8 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
 - `setup-env.sh`: script para crear archivos .env
 
 ## 📝 URLs de entrega (completa cuando despliegues)
-- Dashboard: [PENDIENTE]
-- API Python: [PENDIENTE]
+- Dashboard: https://ai-ticket-processor.vercel.app/
+- API Python: https://ai-ticket-processor.onrender.com/docs
 
 ## 🧠 Prompt Engineering
 
@@ -46,7 +46,7 @@ El modelo recibe un prompt estricto para devolver **JSON** con `category` y `sen
 - **Categorías**: Técnico, Facturación, Comercial
 - **Sentimiento**: Positivo, Neutral, Negativo
 
-**Fallback**: Si el LLM no está disponible, se usa clasificación basada en reglas (keywords).
+Si el LLM no está disponible, se usa clasificación basada en reglas (keywords).
 
 ## 🔔 Notificaciones Automáticas (n8n)
 
@@ -59,7 +59,8 @@ El sistema está integrado con **n8n** para enviar notificaciones por email auto
   3. Si el sentimiento es "Negativo", la API llama automáticamente al webhook de n8n
   4. n8n procesa el webhook (sin llamar a la API) y envía un email de alerta
 - **Configuración**: Agrega `N8N_WEBHOOK_URL` en las variables de entorno de la API (ver `python-api/ENV_EXAMPLE.md`)
-- **Opcional**: Si no configuras `N8N_WEBHOOK_URL`, el sistema funciona normalmente pero no envía emails
+- Si no configuras `N8N_WEBHOOK_URL`, el sistema funciona pero no envía emails
+- **Payload**: n8n recibe los datos en `body` (`body.description`, `body.category`, `body.sentiment`, `body.id`)
 
 ## 🐳 Docker Compose (Recomendado)
 
