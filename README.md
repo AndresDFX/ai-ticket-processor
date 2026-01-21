@@ -1,4 +1,4 @@
-# AI-Powered Support Co-Pilot (Vivatori)
+# AI-Powered Support Co-Pilot
 
 Sistema de procesamiento automático de tickets de soporte con IA, dashboard en tiempo real y automatización con n8n.
 

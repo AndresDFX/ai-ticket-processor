@@ -1,4 +1,4 @@
-# 🧪 Guía de Testing - Vivatori
+# 🧪 Guía de Testing - AI Support Co-Pilot
 
 ## ✅ Checklist Pre-Testing
 

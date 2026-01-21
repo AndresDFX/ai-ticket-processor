@@ -109,13 +109,16 @@ export default function App() {
 
   return (
     <div className="min-h-screen p-6 bg-slate-950 text-slate-100">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold">Vivatori Support Co-Pilot</h1>
-        <p className="text-slate-400">
-          Dashboard en tiempo real de tickets procesados.
-        </p>
-        <div className="mt-2 text-xs text-slate-500">
-          Realtime: <span className="text-slate-300">{realtimeStatus}</span>
+      <header className="mb-6 flex items-center gap-3">
+        <img src="/logo.svg" alt="Support Co-Pilot" className="h-10 w-10" />
+        <div>
+          <h1 className="text-2xl font-semibold">AI Support Co-Pilot</h1>
+          <p className="text-slate-400">
+            Dashboard en tiempo real de tickets procesados.
+          </p>
+          <div className="mt-2 text-xs text-slate-500">
+            Realtime: <span className="text-slate-300">{realtimeStatus}</span>
+          </div>
         </div>
       </header>
 

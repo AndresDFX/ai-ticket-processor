@@ -1,4 +1,4 @@
--- Datos de prueba para vivatori
+-- Datos de prueba
 insert into public.tickets (description, category, sentiment, processed)
 values
   ('No puedo acceder a mi cuenta desde el móvil', 'Técnico', 'Negativo', true),

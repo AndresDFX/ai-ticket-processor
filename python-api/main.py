@@ -13,7 +13,7 @@ from langchain_community.llms import HuggingFaceHub
 
 load_dotenv()
 
-app = FastAPI(title="Vivatori AI Support Co-Pilot")
+app = FastAPI(title="AI Support Co-Pilot")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # En producción, especifica el dominio del frontend

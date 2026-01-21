@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Iniciando Vivatori Support Co-Pilot..."
+echo "🚀 Iniciando AI Support Co-Pilot..."
 
 # Verificar que existan los archivos .env
 if [ ! -f "python-api/.env" ]; then

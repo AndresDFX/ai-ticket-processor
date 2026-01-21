@@ -1,4 +1,4 @@
--- Vivatori: tabla de tickets
+-- Tabla de tickets
 create extension if not exists "pgcrypto";
 
 create table if not exists public.tickets (

@@ -1,4 +1,4 @@
-# 🚀 Guía Rápida - Vivatori Support Co-Pilot
+# 🚀 Guía Rápida - AI Support Co-Pilot
 
 ## 📋 Prerrequisitos
 
@@ -31,7 +31,7 @@
 
 **API (`python-api/.env`):**
 ```bash
-cd vivatori
+cd <project-root>
 cp python-api/.env.example python-api/.env
 # Edita python-api/.env con tus credenciales
 ```
@@ -135,13 +135,13 @@ La API llama automáticamente al webhook de n8n cuando detecta un ticket con sen
 #### Paso 1: Importar workflow
 1. Entra a tu workspace de n8n Cloud: https://app.n8n.io
 2. Click en **"Workflows"** → **"Add workflow"** → **"Import from File"**
-3. Selecciona `vivatori/n8n-workflow/workflow.json`
+3. Selecciona `n8n-workflow/workflow.json`
 
 #### Paso 2: Configurar nodo Email con Gmail
 1. Abre el nodo **"Send Email (Simulado)"**
 2. Click en **"Credential for SMTP"** → **"Create New Credential"**
 3. Configura:
-   - **Name**: `Gmail Vivatori`
+   - **Name**: `Gmail Support Co-Pilot`
    - **User**: Tu email de Gmail
    - **Password**: Contraseña de aplicación de Gmail (ver sección Gmail abajo)
    - **Host**: `smtp.gmail.com`
@@ -151,7 +151,7 @@ La API llama automáticamente al webhook de n8n cuando detecta un ticket con sen
 4. Configura el email (ya viene con valores Gmail por defecto en el workflow):
    - **From Email**: `tu-email@gmail.com`
    - **To Email**: `tu-email@gmail.com`
-   - **Subject**: `⚠️ Ticket con sentimiento negativo - Vivatori`
+   - **Subject**: `⚠️ Ticket con sentimiento negativo - Support Co-Pilot`
    - **Email Body** (usar modo expresión):
      ```
      Se ha recibido un ticket con sentimiento negativo:
@@ -166,9 +166,9 @@ La API llama automáticamente al webhook de n8n cuando detecta un ticket con sen
 
 #### Paso 3: Obtener URL del webhook
 1. Abre el nodo **"Webhook"**
-2. Verifica que el **Path** sea: `vivatori-support-webhook`
+2. Verifica que el **Path** sea: `support-copilot-webhook`
 3. Click en **"Listen for test event"** o busca la **"Production URL"**
-4. Copia la URL completa (ejemplo: `https://tu-workspace.n8n.cloud/webhook/vivatori-support-webhook`)
+4. Copia la URL completa (ejemplo: `https://tu-workspace.n8n.cloud/webhook/support-copilot-webhook`)
 
 #### Paso 4: Configurar variable de entorno en Render
 1. Ve a tu servicio en Render → **Environment**
@@ -197,8 +197,8 @@ La API llama automáticamente al webhook de n8n cuando detecta un ticket con sen
 2. Abre n8n: http://localhost:5678
 3. Importa `n8n-workflow/workflow.json`
 4. Configura el nodo **Email** con Gmail (mismo proceso que arriba)
-5. Copia la URL del webhook (ejemplo: `http://localhost:5678/webhook/vivatori-support-webhook`)
-6. Agrega `N8N_WEBHOOK_URL=http://localhost:5678/webhook/vivatori-support-webhook` en `python-api/.env`
+5. Copia la URL del webhook (ejemplo: `http://localhost:5678/webhook/support-copilot-webhook`)
+6. Agrega `N8N_WEBHOOK_URL=http://localhost:5678/webhook/support-copilot-webhook` en `python-api/.env`
 7. Reinicia la API para que tome la nueva variable
 
 ---
