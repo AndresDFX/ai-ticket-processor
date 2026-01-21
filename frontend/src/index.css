@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 body {
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Mejoras de accesibilidad visual y enfoque para interacción con teclado */
@@ -19,7 +20,7 @@ body {
 }
 
 .card {
-  @apply rounded-lg border border-slate-800 bg-slate-900/70 p-4 shadow-sm;
+  @apply rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/70 p-4 shadow-sm transition-colors;
 }
 
 /* Truncar texto en líneas */
@@ -28,4 +29,15 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Light mode adjustments */
+.light {
+  background-color: #ffffff;
+  color: #111827;
+}
+
+.dark {
+  background-color: #0f172a;
+  color: #f1f5f9;
 }

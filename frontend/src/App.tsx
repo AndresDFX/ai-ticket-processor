@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Eye, CheckCircle, XCircle, AlertCircle, Loader2, Search } from 'lucide-react';
+import ThemeToggle from './components/ThemeToggle';
 
 type Ticket = {
   id: string;
@@ -142,21 +143,26 @@ export default function App() {
   const paginatedTickets = filteredTickets.slice(startIndex, startIndex + itemsPerPage);
 
   return (
-    <div className="min-h-screen p-6 bg-slate-950 text-slate-100">
+    <div className="min-h-screen p-6 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
       <main className="container mx-auto max-w-4xl">
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 flex items-center gap-3"
+          className="mb-6 flex items-center justify-between p-6 bg-gradient-to-r from-primary-500 to-primary-600 dark:from-primary-600 dark:to-primary-700 rounded-xl shadow-lg"
         >
-          <img src="/logo.svg" alt="Logo Support Co-Pilot" className="h-10 w-10" />
-          <div>
-            <h1 className="text-2xl font-semibold">AI Support Co-Pilot</h1>
-            <p className="text-slate-400">Dashboard en tiempo real de tickets procesados.</p>
-            <div className="mt-2 text-xs text-slate-500">
-              Realtime: <span className="text-slate-300" aria-live="polite">{realtimeStatus}</span>
+          <div className="flex items-center gap-3">
+            <img src="/logo.svg" alt="AI Support Co-Pilot Logo" className="h-12 w-12" />
+            <div>
+              <h1 className="text-2xl font-bold text-white">AI Support Co-Pilot</h1>
+              <p className="text-primary-100 dark:text-primary-200">
+                Dashboard en tiempo real de tickets procesados.
+              </p>
+              <div className="mt-2 text-xs text-primary-200 dark:text-primary-300">
+                Realtime: <span className="text-white" aria-live="polite">{realtimeStatus}</span>
+              </div>
             </div>
           </div>
+          <ThemeToggle />
         </motion.header>
 
         <motion.section
@@ -165,7 +171,7 @@ export default function App() {
           transition={{ delay: 0.1 }}
           className="mb-6 card"
         >
-          <h2 className="mb-3 font-semibold">Crear Nuevo Ticket</h2>
+          <h2 className="mb-3 font-semibold">Gestion de tickets</h2>
           <form onSubmit={handleSubmit} className="flex gap-2" aria-label="Crear ticket">
             <input
               type="text"
@@ -173,7 +179,7 @@ export default function App() {
               value={newTicket}
               onChange={(e) => setNewTicket(e.target.value)}
               placeholder="Describe el problema o consulta..."
-              className="flex-1 rounded border border-slate-700 bg-slate-800 px-4 py-2 text-slate-100 placeholder-slate-500 focus-visible:ring-2 focus-visible:ring-primary-400"
+              className="flex-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus-visible:ring-2 focus-visible:ring-primary-400"
               disabled={submitting}
             />
             <button
@@ -183,7 +189,7 @@ export default function App() {
               aria-disabled={submitting || !newTicket.trim()}
             >
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              {submitting ? 'Creando...' : 'Crear Ticket'}
+              {submitting ? 'Creando...' : 'Crear'}
             </button>
           </form>
         </motion.section>
@@ -207,7 +213,7 @@ export default function App() {
                     setSearchTerm(e.target.value);
                     setCurrentPage(1); // Reset to first page on search
                   }}
-                  className="pl-10 rounded border border-slate-700 bg-slate-800 px-3 py-1 text-sm text-slate-100 placeholder-slate-500 focus-visible:ring-2 focus-visible:ring-primary-400"
+                  className="pl-10 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus-visible:ring-2 focus-visible:ring-primary-400"
                 />
               </div>
               {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
@@ -229,15 +235,15 @@ export default function App() {
                     onClick={() => setSelectedTicket(ticket)}
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <div className="text-sm text-slate-400 font-mono">#{ticket.id.slice(-8)}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 font-mono">#{ticket.id.slice(-8)}</div>
                       <div className="flex gap-1">
-                        {ticket.sentiment === 'positivo' && <CheckCircle className="w-4 h-4 text-green-400" />}
-                        {ticket.sentiment === 'negativo' && <XCircle className="w-4 h-4 text-red-400" />}
-                        {ticket.processed ? <CheckCircle className="w-4 h-4 text-blue-400" /> : <AlertCircle className="w-4 h-4 text-yellow-400" />}
+                        {ticket.sentiment === 'positivo' && <CheckCircle className="w-4 h-4 text-green-500" />}
+                        {ticket.sentiment === 'negativo' && <XCircle className="w-4 h-4 text-red-500" />}
+                        {ticket.processed ? <CheckCircle className="w-4 h-4 text-blue-500" /> : <AlertCircle className="w-4 h-4 text-yellow-500" />}
                       </div>
                     </div>
-                    <h3 className="font-medium text-slate-100 mb-2 line-clamp-2">{ticket.description}</h3>
-                    <div className="flex items-center justify-between text-xs text-slate-500">
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2 line-clamp-2">{ticket.description}</h3>
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                       <span>{ticket.category || 'Sin categoría'}</span>
                       <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
                     </div>
@@ -254,7 +260,7 @@ export default function App() {
                 >
                   Anterior
                 </button>
-                <span className="text-slate-400 text-sm">
+                <span className="text-gray-600 dark:text-gray-400 text-sm">
                   Página {currentPage} de {totalPages}
                 </span>
                 <button
@@ -283,7 +289,7 @@ export default function App() {
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-slate-900 rounded-lg p-6 max-w-md w-full"
+                className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full"
                 onClick={(e) => e.stopPropagation()}
               >
                 <h3 className="text-lg font-semibold mb-4">Detalles del Ticket</h3>
