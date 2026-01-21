@@ -57,7 +57,7 @@ El sistema está integrado con **n8n** para enviar notificaciones por email auto
   1. El frontend crea un ticket (o se procesa vía API)
   2. La API clasifica el ticket con IA
   3. Si el sentimiento es "Negativo", la API llama automáticamente al webhook de n8n
-  4. n8n procesa el webhook, llama a la API para obtener detalles, y envía un email de alerta
+  4. n8n procesa el webhook (sin llamar a la API) y envía un email de alerta
 - **Configuración**: Agrega `N8N_WEBHOOK_URL` en las variables de entorno de la API (ver `python-api/ENV_EXAMPLE.md`)
 - **Opcional**: Si no configuras `N8N_WEBHOOK_URL`, el sistema funciona normalmente pero no envía emails
 

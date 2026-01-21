@@ -14,25 +14,12 @@
     },
     {
       "parameters": {
-        "url": "https://YOUR_API_URL/process-ticket",
-        "method": "POST",
-        "sendBody": true,
-        "jsonParameters": true,
-        "bodyParametersJson": "{\"description\": \"={{$json[\\\"description\\\"]}}\", \"ticket_id\": \"={{$json[\\\"id\\\"]}}\"}"
-      },
-      "name": "Process Ticket API",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [480, 300]
-    },
-    {
-      "parameters": {
         "conditions": {
           "string": [
             {
-              "value1": "={{$json[\"sentiment\"]}}",
+              "value1": "={{ ($json.sentiment || ($json.body && $json.body.sentiment) || '').toLowerCase() }}",
               "operation": "equals",
-              "value2": "Negativo"
+              "value2": "negativo"
             }
           ]
         }
@@ -40,26 +27,23 @@
       "name": "If Sentiment Negative",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [700, 300]
+      "position": [520, 300]
     },
     {
       "parameters": {
-        "fromEmail": "qa@vivatori.local",
-        "toEmail": "qa-team@vivatori.local",
-        "subject": "Nuevo ticket negativo",
-        "text": "Se detectó un ticket con sentimiento negativo. Revisar el dashboard."
+        "fromEmail": "={{ $json.email_from || ($json.body && $json.body.email_from) || 'qa@vivatori.local' }}",
+        "toEmail": "={{ $json.email_to || ($json.body && $json.body.email_to) || 'qa-team@vivatori.local' }}",
+        "subject": "={{ $json.email_subject || ($json.body && $json.body.email_subject) || 'Nuevo ticket negativo' }}",
+        "text": "={{ 'Se detectó un ticket con sentimiento negativo.\\n\\n' +\n  'Ticket ID: ' + ($json.id || ($json.body && $json.body.id) || 'N/A') + '\\n' +\n  'Descripción: ' + ($json.description || ($json.body && $json.body.description) || 'N/A') + '\\n' +\n  'Categoría: ' + ($json.category || ($json.body && $json.body.category) || 'N/A') + '\\n' +\n  'Sentimiento: ' + ($json.sentiment || ($json.body && $json.body.sentiment) || 'N/A') + '\\n\\n' +\n  'Revisar el dashboard para más detalles.' }}"
       },
       "name": "Send Email (Simulado)",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
-      "position": [920, 220]
+      "position": [760, 220]
     }
   ],
   "connections": {
     "Webhook": {
-      "main": [[{"node": "Process Ticket API", "type": "main", "index": 0}]]
-    },
-    "Process Ticket API": {
       "main": [[{"node": "If Sentiment Negative", "type": "main", "index": 0}]]
     },
     "If Sentiment Negative": {

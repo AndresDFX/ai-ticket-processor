@@ -126,6 +126,10 @@ alter publication supabase_realtime add table public.tickets;
 3. Si el sentimiento es "Negativo", la API llama automáticamente al webhook de n8n
 4. n8n recibe el webhook, procesa y envía email de alerta
 
+**Payload que recibe n8n desde la API**:
+- `description`, `category`, `sentiment`, `id`
+- Opcional: `email_from`, `email_to`, `email_subject` (para sobreescribir el correo)
+
 ### Opción A: n8n Cloud (Recomendado para producción)
 
 #### Paso 1: Importar workflow
@@ -133,13 +137,7 @@ alter publication supabase_realtime add table public.tickets;
 2. Click en **"Workflows"** → **"Add workflow"** → **"Import from File"**
 3. Selecciona `vivatori/n8n-workflow/workflow.json`
 
-#### Paso 2: Configurar nodo HTTP Request
-1. Abre el nodo **"Process Ticket API"**
-2. Cambia la URL a tu API desplegada en Render:
-   - `https://ai-ticket-processor.onrender.com/process-ticket`
-   - (Reemplaza con tu URL real de Render)
-
-#### Paso 3: Configurar nodo Email con Gmail
+#### Paso 2: Configurar nodo Email con Gmail
 1. Abre el nodo **"Send Email (Simulado)"**
 2. Click en **"Credential for SMTP"** → **"Create New Credential"**
 3. Configura:
@@ -158,31 +156,31 @@ alter publication supabase_realtime add table public.tickets;
      ```
      Se ha recibido un ticket con sentimiento negativo:
      
-     Descripción: {{ $json.body.description }}
+     Descripción: {{ $json.description }}
      Categoría: {{ $json.category }}
      Sentimiento: {{ $json.sentiment }}
      
      Por favor, revisar con prioridad.
      ```
 
-#### Paso 4: Obtener URL del webhook
+#### Paso 3: Obtener URL del webhook
 1. Abre el nodo **"Webhook"**
 2. Verifica que el **Path** sea: `vivatori-support-webhook`
 3. Click en **"Listen for test event"** o busca la **"Production URL"**
 4. Copia la URL completa (ejemplo: `https://tu-workspace.n8n.cloud/webhook/vivatori-support-webhook`)
 
-#### Paso 5: Configurar variable de entorno en Render
+#### Paso 4: Configurar variable de entorno en Render
 1. Ve a tu servicio en Render → **Environment**
 2. Agrega nueva variable:
    - **Key**: `N8N_WEBHOOK_URL`
    - **Value**: La URL del webhook que copiaste en el Paso 4
 3. Guarda y espera a que se redespliegue
 
-#### Paso 6: Activar workflow
+#### Paso 5: Activar workflow
 1. En n8n, activa el workflow con el toggle **"Active"** (arriba a la derecha)
 2. El workflow queda escuchando en el webhook
 
-#### Paso 7: Probar
+#### Paso 6: Probar
 1. Ve al frontend y crea un ticket con texto negativo:
    - Ejemplo: "No funciona el login y estoy muy molesto con este problema terrible"
 2. La API procesará el ticket automáticamente
@@ -197,11 +195,10 @@ alter publication supabase_realtime add table public.tickets;
    ```
 2. Abre n8n: http://localhost:5678
 3. Importa `n8n-workflow/workflow.json`
-4. Configura el nodo **HTTP Request** con: `http://localhost:8001/process-ticket`
-5. Configura el nodo **Email** con Gmail (mismo proceso que arriba)
-6. Copia la URL del webhook (ejemplo: `http://localhost:5678/webhook/vivatori-support-webhook`)
-7. Agrega `N8N_WEBHOOK_URL=http://localhost:5678/webhook/vivatori-support-webhook` en `python-api/.env`
-8. Reinicia la API para que tome la nueva variable
+4. Configura el nodo **Email** con Gmail (mismo proceso que arriba)
+5. Copia la URL del webhook (ejemplo: `http://localhost:5678/webhook/vivatori-support-webhook`)
+6. Agrega `N8N_WEBHOOK_URL=http://localhost:5678/webhook/vivatori-support-webhook` en `python-api/.env`
+7. Reinicia la API para que tome la nueva variable
 
 ---
 
@@ -230,10 +227,9 @@ alter publication supabase_realtime add table public.tickets;
 ### n8n Cloud
 1. Importa `n8n-workflow/workflow.json`.
 2. Configura el nodo **Email** con credenciales SMTP (Gmail recomendado).
-3. Configura el nodo **HTTP Request** con la URL pública de Render.
-4. Activa el workflow y copia la **URL del webhook** (Production URL).
-5. Agrega `N8N_WEBHOOK_URL` en las variables de entorno de Render.
-6. **Listo**: Ahora cuando crees un ticket negativo desde el frontend, recibirás un email automáticamente.
+3. Activa el workflow y copia la **URL del webhook** (Production URL).
+4. Agrega `N8N_WEBHOOK_URL` en las variables de entorno de Render.
+5. **Listo**: Ahora cuando crees un ticket negativo desde el frontend, recibirás un email automáticamente.
 
 ## 🔧 Desarrollo Local (sin Docker)
 
