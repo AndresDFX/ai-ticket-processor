@@ -2,6 +2,14 @@
 
 Sistema de procesamiento automático de tickets de soporte con IA, dashboard en tiempo real y automatización con n8n.
 
+## ✨ Características Destacadas
+
+- **Dashboard Moderno**: Interfaz responsiva con animaciones suaves, tema oscuro accesible y navegación intuitiva.
+- **Experiencia de Usuario Mejorada**: Notificaciones en tiempo real, búsqueda de tickets, modales para detalles y indicadores visuales con iconos.
+- **Accesibilidad**: Soporte completo para navegación por teclado, etiquetas ARIA y alto contraste.
+- **Animaciones Fancy**: Transiciones fluidas con Framer Motion para una experiencia interactiva premium.
+- **Componentes Interactivos**: Botones con estados de carga, spinners animados y feedback visual inmediato.
+
 ## 🚀 Inicio Rápido
 
 **👉 Ver [QUICKSTART.md](./QUICKSTART.md) para instrucciones detalladas paso a paso.**
@@ -31,7 +39,7 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
 - `supabase/`: esquema SQL y seed
 - `python-api/`: microservicio FastAPI + LangChain
 - `n8n-workflow/`: flujo de automatización exportado
-- `frontend/`: dashboard React + Vite + Tailwind
+- `frontend/`: dashboard React + Vite + Tailwind con mejoras UX/UI (animaciones, notificaciones, modales)
 - `docker-compose.yml`: orquestación local
 - `start.sh`: script de inicio rápido
 - `setup-env.sh`: script para crear archivos .env
@@ -40,13 +48,26 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
 - Dashboard: https://ai-ticket-processor.vercel.app/
 - API Python: https://ai-ticket-processor.onrender.com/docs
 
-## 🧠 Prompt Engineering
+## 🎨 Mejoras en el Frontend
 
-El modelo recibe un prompt estricto para devolver **JSON** con `category` y `sentiment`:
-- **Categorías**: Técnico, Facturación, Comercial
-- **Sentimiento**: Positivo, Neutral, Negativo
+### UX/UI Enhancements
+- **Tema Oscuro Accesible**: Paleta de colores consistente con alto contraste y soporte para navegación por teclado.
+- **Animaciones Suaves**: Entradas y salidas animadas con Framer Motion para una experiencia fluida.
+- **Notificaciones Toast**: Feedback visual inmediato para acciones exitosas, errores y eventos en tiempo real.
+- **Modal de Detalles**: Vista expandida de tickets con información completa en un modal centrado.
+- **Búsqueda en Tiempo Real**: Filtrado instantáneo de tickets por descripción o categoría.
+- **Iconos Significativos**: Indicadores visuales con Lucide React para estados de sentimiento y procesamiento.
+- **Estados de Carga**: Spinners animados y botones con indicadores de progreso.
 
-Si el LLM no está disponible, se usa clasificación basada en reglas (keywords).
+### Tecnologías Añadidas
+- **Framer Motion**: Para animaciones y transiciones premium.
+- **Lucide React**: Conjunto de iconos modernos y accesibles.
+- **Tailwind CSS Extendido**: Configuración personalizada con colores primarios y fuente Inter.
+
+### Accesibilidad
+- Etiquetas ARIA completas para lectores de pantalla.
+- Navegación por teclado con focus-visible.
+- Alto contraste en todos los elementos interactivos.
 
 ## 🔔 Notificaciones Automáticas (n8n)
 
