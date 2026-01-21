@@ -3,6 +3,7 @@ import os
 import re
 from typing import Optional
 
+import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -99,6 +100,37 @@ def classify_ticket(description: str) -> dict:
         return classify_with_rules(description)
 
 
+def notify_n8n_if_negative(description: str, category: str, sentiment: str, ticket_id: Optional[str] = None):
+    """Notifica a n8n si el sentimiento es negativo para enviar email de alerta"""
+    if sentiment.lower() != "negativo":
+        return
+    
+    n8n_webhook_url = os.getenv("N8N_WEBHOOK_URL")
+    if not n8n_webhook_url:
+        # Si no está configurado, no hace nada (no es crítico)
+        return
+    
+    try:
+        payload = {
+            "description": description,
+            "category": category,
+            "sentiment": sentiment,
+        }
+        if ticket_id:
+            payload["id"] = ticket_id
+        
+        # Llamada asíncrona, no bloquea la respuesta
+        requests.post(
+            n8n_webhook_url,
+            json=payload,
+            timeout=5,
+            headers={"Content-Type": "application/json"}
+        )
+    except Exception as e:
+        # Log del error pero no falla el procesamiento del ticket
+        print(f"Warning: No se pudo notificar a n8n: {e}")
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -138,6 +170,14 @@ def create_ticket(ticket: TicketIn):
         }
     ).eq("id", ticket_id).execute()
 
+    # Notificar a n8n si el sentimiento es negativo
+    notify_n8n_if_negative(
+        ticket.description,
+        classification["category"],
+        classification["sentiment"],
+        ticket_id
+    )
+
     return {
         "ticket_id": ticket_id,
         "category": classification["category"],
@@ -165,6 +205,14 @@ def process_ticket(ticket: TicketIn):
                 "processed": True,
             }
         ).eq("id", ticket.ticket_id).execute()
+
+    # Notificar a n8n si el sentimiento es negativo
+    notify_n8n_if_negative(
+        ticket.description,
+        result["category"],
+        result["sentiment"],
+        ticket.ticket_id
+    )
 
     return TicketOut(
         category=result["category"],
