@@ -56,6 +56,8 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
 - **Notificaciones Toast**: Feedback visual inmediato para acciones exitosas, errores y eventos en tiempo real.
 - **Modal de Detalles**: Vista expandida de tickets con información completa en un modal centrado.
 - **Búsqueda en Tiempo Real**: Filtrado instantáneo de tickets por descripción o categoría.
+- **Grid Responsivo**: Vista de tarjetas en grid (1 columna móvil, 2 tablet, 3 desktop) para mejor organización visual.
+- **Paginación**: Navegación paginada con controles anterior/siguiente y contador de páginas.
 - **Iconos Significativos**: Indicadores visuales con Lucide React para estados de sentimiento y procesamiento.
 - **Estados de Carga**: Spinners animados y botones con indicadores de progreso.
 

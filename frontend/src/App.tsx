@@ -40,6 +40,8 @@ export default function App() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9; // 3x3 grid
 
   const addNotification = (type: Notification['type'], message: string) => {
     const id = Date.now().toString();
@@ -135,6 +137,10 @@ export default function App() {
     ticket.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTickets = filteredTickets.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div className="min-h-screen p-6 bg-slate-950 text-slate-100">
       <main className="container mx-auto max-w-4xl">
@@ -189,7 +195,7 @@ export default function App() {
           className="card"
         >
           <div className="flex items-center justify-between px-1 py-3 border-b border-slate-800">
-            <h2 className="font-semibold">Tickets</h2>
+            <h2 className="font-semibold">Tickets ({filteredTickets.length})</h2>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -197,55 +203,69 @@ export default function App() {
                   type="text"
                   placeholder="Buscar tickets..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1); // Reset to first page on search
+                  }}
                   className="pl-10 rounded border border-slate-700 bg-slate-800 px-3 py-1 text-sm text-slate-100 placeholder-slate-500 focus-visible:ring-2 focus-visible:ring-primary-400"
                 />
               </div>
               {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
             </div>
           </div>
-          <div className="divide-y divide-slate-800">
-            {filteredTickets.length === 0 && !loading && (
-              <div className="p-4 text-slate-400">No hay tickets aún.</div>
+          <div className="p-4">
+            {paginatedTickets.length === 0 && !loading && (
+              <div className="text-slate-400 text-center py-8">No hay tickets aún.</div>
             )}
-            <AnimatePresence>
-              {filteredTickets.map((ticket) => (
-                <motion.article
-                  key={ticket.id}
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="p-4"
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <AnimatePresence>
+                {paginatedTickets.map((ticket) => (
+                  <motion.div
+                    key={ticket.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="card p-4 cursor-pointer hover:bg-slate-800/50 transition-colors"
+                    onClick={() => setSelectedTicket(ticket)}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="text-sm text-slate-400 font-mono">#{ticket.id.slice(-8)}</div>
+                      <div className="flex gap-1">
+                        {ticket.sentiment === 'positivo' && <CheckCircle className="w-4 h-4 text-green-400" />}
+                        {ticket.sentiment === 'negativo' && <XCircle className="w-4 h-4 text-red-400" />}
+                        {ticket.processed ? <CheckCircle className="w-4 h-4 text-blue-400" /> : <AlertCircle className="w-4 h-4 text-yellow-400" />}
+                      </div>
+                    </div>
+                    <h3 className="font-medium text-slate-100 mb-2 line-clamp-2">{ticket.description}</h3>
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span>{ticket.category || 'Sin categoría'}</span>
+                      <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-6">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="btn-primary disabled:opacity-50 px-3 py-1 text-sm"
                 >
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="text-sm text-slate-400">{ticket.id}</div>
-                      <div className="mt-1">{ticket.description}</div>
-                    </div>
-                    <div className="flex gap-2 flex-wrap items-center">
-                      <span className="px-2 py-1 rounded border border-slate-700 text-xs">{ticket.category || 'Sin categoría'}</span>
-                      <span className={`px-2 py-1 rounded border text-xs ${sentimentColor(ticket.sentiment)}`}>
-                        {ticket.sentiment === 'positivo' && <CheckCircle className="w-3 h-3 inline mr-1" />}
-                        {ticket.sentiment === 'negativo' && <XCircle className="w-3 h-3 inline mr-1" />}
-                        {ticket.sentiment || 'Neutral'}
-                      </span>
-                      <span className="px-2 py-1 rounded border border-slate-700 text-xs">
-                        {ticket.processed ? <CheckCircle className="w-3 h-3 inline mr-1" /> : <AlertCircle className="w-3 h-3 inline mr-1" />}
-                        {ticket.processed ? 'Procesado' : 'Pendiente'}
-                      </span>
-                      <button
-                        onClick={() => setSelectedTicket(ticket)}
-                        className="btn-primary text-xs px-2 py-1"
-                        aria-label={`Ver detalles de ticket ${ticket.id}`}
-                      >
-                        <Eye className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="text-xs text-slate-500 mt-2">{new Date(ticket.created_at).toLocaleString()}</div>
-                </motion.article>
-              ))}
-            </AnimatePresence>
+                  Anterior
+                </button>
+                <span className="text-slate-400 text-sm">
+                  Página {currentPage} de {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="btn-primary disabled:opacity-50 px-3 py-1 text-sm"
+                >
+                  Siguiente
+                </button>
+              </div>
+            )}
           </div>
         </motion.section>
 
