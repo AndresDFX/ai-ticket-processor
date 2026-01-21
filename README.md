@@ -24,7 +24,7 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
    chmod +x start.sh
    ./start.sh
    ```
-4. **Abre**: http://localhost:5173
+4. **Abre**: http://localhost:5200
 
 ## 📁 Estructura
 
@@ -68,7 +68,7 @@ El sistema está integrado con **n8n** para enviar notificaciones por email auto
 docker compose up --build
 ```
 
-- Frontend: http://localhost:5173
+- Frontend: http://localhost:5200
 - API: http://localhost:8001
 - API Docs: http://localhost:8001/docs
 

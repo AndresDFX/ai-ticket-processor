@@ -15,4 +15,4 @@ services:
     env_file:
       - ./frontend/.env
     ports:
-      - "5173:5173"
+      - "5200:5200"

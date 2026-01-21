@@ -29,7 +29,7 @@ curl http://localhost:8001/health
 **Esperado**: `{"status":"ok"}`
 
 ### Test 2: Crear Ticket desde Frontend
-1. Abre http://localhost:5173
+1. Abre http://localhost:5200
 2. Escribe un ticket en el formulario: "No funciona el login"
 3. Click en "Crear Ticket"
 4. **Esperado**: El ticket aparece en la lista con categoría y sentimiento
@@ -43,7 +43,7 @@ curl -X POST http://localhost:8001/create-ticket \
 **Esperado**: JSON con `ticket_id`, `category`, `sentiment`, `processed: true`
 
 ### Test 4: Realtime Updates
-1. Abre el dashboard en http://localhost:5173
+1. Abre el dashboard en http://localhost:5200
 2. En otra terminal, crea un ticket vía API (Test 3)
 3. **Esperado**: El ticket aparece automáticamente sin refrescar
 

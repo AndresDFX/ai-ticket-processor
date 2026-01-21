@@ -57,7 +57,7 @@ docker compose up --build
 
 ### Paso 5: Abrir el Dashboard
 
-- **Frontend**: http://localhost:5173
+- **Frontend**: http://localhost:5200
 - **API Docs**: http://localhost:8001/docs
 - **Health Check**: http://localhost:8001/health
 
@@ -67,7 +67,7 @@ docker compose up --build
 
 ### ✅ Local (desarrollo)
 - **API**: Docker Compose o `uvicorn` local en `http://localhost:8001`
-- **Frontend**: Vite en `http://localhost:5173`
+- **Frontend**: Vite en `http://localhost:5200`
 - **n8n**: Docker local `http://localhost:5678`
 - **Config env frontend**: `VITE_API_URL=http://localhost:8001`
 
@@ -104,7 +104,7 @@ curl -X POST http://localhost:8001/process-ticket \
 
 ### 3. Ver en tiempo real
 
-El dashboard en http://localhost:5173 se actualizará automáticamente gracias a Supabase Realtime.
+El dashboard en http://localhost:5200 se actualizará automáticamente gracias a Supabase Realtime.
 
 Si no ves actualizaciones en tiempo real, ejecuta en el SQL Editor:
 ```sql

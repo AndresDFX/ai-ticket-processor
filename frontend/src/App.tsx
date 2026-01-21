@@ -109,79 +109,69 @@ export default function App() {
 
   return (
     <div className="min-h-screen p-6 bg-slate-950 text-slate-100">
-      <header className="mb-6 flex items-center gap-3">
-        <img src="/logo.svg" alt="Support Co-Pilot" className="h-10 w-10" />
-        <div>
-          <h1 className="text-2xl font-semibold">AI Support Co-Pilot</h1>
-          <p className="text-slate-400">
-            Dashboard en tiempo real de tickets procesados.
-          </p>
-          <div className="mt-2 text-xs text-slate-500">
-            Realtime: <span className="text-slate-300">{realtimeStatus}</span>
-          </div>
-        </div>
-      </header>
-
-      <div className="mb-6 rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-        <h2 className="mb-3 font-semibold">Crear Nuevo Ticket</h2>
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
-            type="text"
-            value={newTicket}
-            onChange={(e) => setNewTicket(e.target.value)}
-            placeholder="Describe el problema o consulta..."
-            className="flex-1 rounded border border-slate-700 bg-slate-800 px-4 py-2 text-slate-100 placeholder-slate-500 focus:border-slate-600 focus:outline-none"
-            disabled={submitting}
-          />
-          <button
-            type="submit"
-            disabled={submitting || !newTicket.trim()}
-            className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {submitting ? 'Creando...' : 'Crear Ticket'}
-          </button>
-        </form>
-      </div>
-
-      <div className="rounded-lg border border-slate-800 bg-slate-900/60">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
-          <h2 className="font-semibold">Tickets</h2>
-          {loading && <span className="text-slate-400 text-sm">Cargando...</span>}
-        </div>
-        <div className="divide-y divide-slate-800">
-          {tickets.length === 0 && !loading && (
-            <div className="p-4 text-slate-400">No hay tickets aún.</div>
-          )}
-          {tickets.map((ticket) => (
-            <div key={ticket.id} className="p-4">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div>
-                  <div className="text-sm text-slate-400">{ticket.id}</div>
-                  <div className="mt-1">{ticket.description}</div>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  <span className="px-2 py-1 rounded border border-slate-700 text-xs">
-                    {ticket.category || 'Sin categoría'}
-                  </span>
-                  <span
-                    className={`px-2 py-1 rounded border text-xs ${sentimentColor(
-                      ticket.sentiment
-                    )}`}
-                  >
-                    {ticket.sentiment || 'Neutral'}
-                  </span>
-                  <span className="px-2 py-1 rounded border border-slate-700 text-xs">
-                    {ticket.processed ? 'Procesado' : 'Pendiente'}
-                  </span>
-                </div>
-              </div>
-              <div className="text-xs text-slate-500 mt-2">
-                {new Date(ticket.created_at).toLocaleString()}
-              </div>
+      <main className="container mx-auto max-w-4xl">
+        <header className="mb-6 flex items-center gap-3">
+          <img src="/logo.svg" alt="Logo Support Co-Pilot" className="h-10 w-10" />
+          <div>
+            <h1 className="text-2xl font-semibold">AI Support Co-Pilot</h1>
+            <p className="text-slate-400">Dashboard en tiempo real de tickets procesados.</p>
+            <div className="mt-2 text-xs text-slate-500">
+              Realtime: <span className="text-slate-300" aria-live="polite">{realtimeStatus}</span>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </header>
+
+        <section className="mb-6 card">
+          <h2 className="mb-3 font-semibold">Crear Nuevo Ticket</h2>
+          <form onSubmit={handleSubmit} className="flex gap-2" aria-label="Crear ticket">
+            <input
+              type="text"
+              aria-label="Descripción del ticket"
+              value={newTicket}
+              onChange={(e) => setNewTicket(e.target.value)}
+              placeholder="Describe el problema o consulta..."
+              className="flex-1 rounded border border-slate-700 bg-slate-800 px-4 py-2 text-slate-100 placeholder-slate-500 focus-visible:ring-2 focus-visible:ring-primary-400"
+              disabled={submitting}
+            />
+            <button
+              type="submit"
+              disabled={submitting || !newTicket.trim()}
+              className="btn-primary disabled:opacity-50"
+              aria-disabled={submitting || !newTicket.trim()}
+            >
+              {submitting ? 'Creando...' : 'Crear Ticket'}
+            </button>
+          </form>
+        </section>
+
+        <section className="card">
+          <div className="flex items-center justify-between px-1 py-3 border-b border-slate-800">
+            <h2 className="font-semibold">Tickets</h2>
+            {loading && <span className="text-slate-400 text-sm">Cargando...</span>}
+          </div>
+          <div className="divide-y divide-slate-800">
+            {tickets.length === 0 && !loading && (
+              <div className="p-4 text-slate-400">No hay tickets aún.</div>
+            )}
+            {tickets.map((ticket) => (
+              <article key={ticket.id} className="p-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  <div>
+                    <div className="text-sm text-slate-400">{ticket.id}</div>
+                    <div className="mt-1">{ticket.description}</div>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <span className="px-2 py-1 rounded border border-slate-700 text-xs">{ticket.category || 'Sin categoría'}</span>
+                    <span className={`px-2 py-1 rounded border text-xs ${sentimentColor(ticket.sentiment)}`}>{ticket.sentiment || 'Neutral'}</span>
+                    <span className="px-2 py-1 rounded border border-slate-700 text-xs">{ticket.processed ? 'Procesado' : 'Pendiente'}</span>
+                  </div>
+                </div>
+                <div className="text-xs text-slate-500 mt-2">{new Date(ticket.created_at).toLocaleString()}</div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
