@@ -167,3 +167,51 @@ uvicorn main:app --host 0.0.0.0 --port 8001
 ## Variables de entorno
 - API: `python-api/ENV_EXAMPLE.md`
 - Frontend: `frontend/ENV_EXAMPLE.md`
+
+## 🔍 Monitoreo y Diagnóstico
+
+### Verificar estado del LLM
+
+El endpoint `/diagnostics` te permite verificar si el LLM está funcionando correctamente:
+
+```bash
+curl https://tu-api.onrender.com/diagnostics
+```
+
+Respuesta ejemplo:
+```json
+{
+  "llm": {
+    "status": "working",
+    "message": "LLM responded successfully",
+    "available": true
+  },
+  "config": {
+    "hf_model": "mistralai/Mistral-7B-Instruct-v0.2",
+    "hf_token_configured": true,
+    "confidence_threshold": 0.5
+  }
+}
+```
+
+### Ver logs en Render
+
+1. Ve a tu servicio en Render Dashboard
+2. Click en **"Logs"** (pestaña superior)
+3. Busca mensajes con prefijos:
+   - `LLM:` - Estado del modelo de lenguaje
+   - `Classification:` - Proceso de clasificación
+   - `n8n:` - Notificaciones a n8n
+
+**Ejemplos de logs importantes:**
+- `LLM: Client initialized successfully` - LLM configurado correctamente
+- `LLM: Classification attempt X failed` - El LLM falló, usando reglas
+- `LLM: Low confidence detected` - El LLM respondió pero con baja confianza
+- `Classification: Using rules fallback` - Se está usando clasificación por reglas
+
+### Troubleshooting
+
+**Si el LLM no funciona:**
+1. Verifica `/diagnostics` - Si `llm.available` es `false`, revisa `HF_API_TOKEN`
+2. Revisa logs en Render - Busca errores específicos
+3. El sistema automáticamente usa reglas si el LLM falla (no se rompe)

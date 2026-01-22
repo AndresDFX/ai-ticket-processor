@@ -1,6 +1,8 @@
 import json
+import logging
 import os
 import re
+import time
 from typing import Optional
 
 import requests
@@ -10,6 +12,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
 from langchain_community.llms import HuggingFaceHub
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -46,8 +54,51 @@ def llm_client() -> Optional[HuggingFaceHub]:
     token = os.getenv("HF_API_TOKEN")
     model = os.getenv("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.2")
     if not token:
+        logger.warning("LLM: HF_API_TOKEN not configured, using rules fallback")
         return None
-    return HuggingFaceHub(repo_id=model, huggingfacehub_api_token=token)
+    try:
+        client = HuggingFaceHub(
+            repo_id=model,
+            huggingfacehub_api_token=token,
+            model_kwargs={
+                "temperature": 0.1,
+                "max_new_tokens": 200,
+                "return_full_text": False,
+            }
+        )
+        logger.info(f"LLM: Client initialized successfully with model {model}")
+        return client
+    except Exception as e:
+        logger.error(f"LLM: Error creating client - {type(e).__name__}: {e}")
+        return None
+
+
+def test_llm_connection() -> dict:
+    """Test if LLM is working correctly"""
+    llm = llm_client()
+    if not llm:
+        return {
+            "status": "not_configured",
+            "message": "HF_API_TOKEN not set",
+            "available": False
+        }
+    
+    try:
+        test_prompt = 'Respond with JSON: {"test": "ok"}'
+        response = llm.invoke(test_prompt)
+        return {
+            "status": "working",
+            "message": "LLM responded successfully",
+            "available": True,
+            "test_response_length": len(response) if response else 0
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"LLM test failed: {type(e).__name__}: {str(e)}",
+            "available": False,
+            "error": str(e)
+        }
 
 
 ALLOWED_CATEGORIES = {
@@ -184,48 +235,133 @@ def classify_with_rules(text: str) -> dict:
 
 
 def parse_json_from_text(text: str) -> dict:
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if not match:
-        raise ValueError("No JSON found in response")
-    return json.loads(match.group(0))
+    text = text.strip()
+    if not text:
+        raise ValueError("Empty response")
+    
+    json_match = re.search(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", text, re.DOTALL)
+    if json_match:
+        try:
+            return json.loads(json_match.group(0))
+        except json.JSONDecodeError:
+            pass
+    
+    json_match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if json_match:
+        try:
+            return json.loads(json_match.group(1))
+        except json.JSONDecodeError:
+            pass
+    
+    json_match = re.search(r"```\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if json_match:
+        try:
+            return json.loads(json_match.group(1))
+        except json.JSONDecodeError:
+            pass
+    
+    raise ValueError("No valid JSON found in response")
 
 
 def classify_ticket(description: str) -> dict:
     normalized_text = normalize_text(description)
     llm = llm_client()
     if not llm:
+        logger.info("Classification: Using rules fallback (LLM not available)")
         return classify_with_rules(normalized_text)
 
-    prompt = (
-        "Classify the support ticket into category and sentiment. "
-        "Return ONLY valid JSON with keys: category, sentiment. "
-        "Categories: Tecnico, Facturacion, Comercial, Acceso, Cuenta, Rendimiento, UX/UI, "
-        "Seguridad, Integraciones, Movil, Solicitudes. "
-        "Sentiment: Positivo, Neutral, Negativo.\n\n"
-        f"Ticket: {normalized_text}\n"
-        "JSON:"
-    )
-    response = llm.invoke(prompt)
-    try:
-        result = parse_json_from_text(response)
-        category = normalize_category(result.get("category", ""))
-        sentiment = normalize_sentiment(result.get("sentiment", ""))
-        confidence = 1.0
+    max_retries = 2
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"Classification: Attempt {attempt + 1} with LLM for ticket: {description[:50]}...")
+            prompt_text = f"""Eres un clasificador de tickets de soporte. Tu tarea es analizar el texto y devolver SOLO un JSON válido con dos claves: "category" y "sentiment".
 
-        if not category or not sentiment:
-            confidence = 0.0
-        if "?" in response or "no estoy seguro" in response.lower():
-            confidence = min(confidence, 0.4)
-        if len(response) > 500:
-            confidence = min(confidence, 0.5)
+Categorías disponibles (elige UNA):
+- Técnico: errores, bugs, fallos técnicos, problemas de funcionamiento
+- Facturación: pagos, cobros, facturas, suscripciones, reembolsos
+- Comercial: precios, planes, cotizaciones, ventas
+- Acceso: login, contraseñas, autenticación, bloqueos, 2FA
+- Cuenta: perfil, registro, modificación de datos, baja de cuenta
+- Rendimiento: lentitud, latencia, demoras, problemas de velocidad
+- UX/UI: diseño, interfaz, botones, navegación, usabilidad
+- Seguridad: phishing, fraudes, vulnerabilidades, seguridad
+- Integraciones: APIs, webhooks, conexiones con otros servicios
+- Móvil: problemas en Android, iOS, aplicaciones móviles
+- Solicitudes: peticiones de nuevas funcionalidades, mejoras
 
-        threshold = float(os.getenv("LLM_CONFIDENCE_THRESHOLD", "0.6"))
-        if confidence < threshold:
+Sentimientos (elige UNO):
+- Positivo: agradecimientos, elogios, satisfacción
+- Neutral: consultas, preguntas, información
+- Negativo: quejas, problemas, frustración, errores
+
+IMPORTANTE: Responde SOLO con JSON válido, sin texto adicional. Ejemplo:
+{{"category": "Técnico", "sentiment": "Negativo"}}
+
+Ticket a clasificar: {normalized_text}
+
+JSON:"""
+            
+            start_time = time.time()
+            response = llm.invoke(prompt_text)
+            elapsed = time.time() - start_time
+            
+            logger.info(f"LLM: Response received in {elapsed:.2f}s, length: {len(response) if response else 0}")
+            
+            if not response or not response.strip():
+                raise ValueError("Empty response from LLM")
+            
+            logger.debug(f"LLM: Raw response: {response[:200]}...")
+            
+            result = parse_json_from_text(response)
+            
+            if not isinstance(result, dict):
+                raise ValueError("Response is not a dictionary")
+            
+            category = normalize_category(result.get("category", ""))
+            sentiment = normalize_sentiment(result.get("sentiment", ""))
+            
+            if not category or not sentiment:
+                raise ValueError(f"Missing category or sentiment - category: {category}, sentiment: {sentiment}")
+            
+            if category not in ALLOWED_CATEGORIES:
+                raise ValueError(f"Invalid category: {category}")
+            
+            if sentiment not in ALLOWED_SENTIMENTS:
+                raise ValueError(f"Invalid sentiment: {sentiment}")
+            
+            confidence = 1.0
+            
+            response_lower = response.lower()
+            uncertainty_indicators = [
+                "no estoy seguro", "no sé", "tal vez", "quizás", 
+                "posiblemente", "probablemente", "?", "maybe"
+            ]
+            if any(indicator in response_lower for indicator in uncertainty_indicators):
+                confidence = min(confidence, 0.4)
+                logger.warning(f"LLM: Low confidence detected due to uncertainty indicators")
+            
+            if len(response) > 500:
+                confidence = min(confidence, 0.5)
+                logger.warning(f"LLM: Low confidence due to long response ({len(response)} chars)")
+            
+            threshold = float(os.getenv("LLM_CONFIDENCE_THRESHOLD", "0.5"))
+            if confidence < threshold:
+                logger.warning(f"LLM: Confidence {confidence} below threshold {threshold}, using rules fallback")
+                return classify_with_rules(normalized_text)
+            
+            logger.info(f"LLM: Successfully classified - Category: {category}, Sentiment: {sentiment}")
+            return {"category": category, "sentiment": sentiment}
+            
+        except Exception as e:
+            error_type = type(e).__name__
+            error_msg = str(e)
+            logger.error(f"LLM: Classification attempt {attempt + 1} failed - {error_type}: {error_msg}")
+            if attempt < max_retries - 1:
+                logger.info(f"LLM: Retrying in 0.5s...")
+                time.sleep(0.5)
+                continue
+            logger.warning("LLM: All attempts failed, falling back to rules-based classification")
             return classify_with_rules(normalized_text)
-
-        return {"category": category, "sentiment": sentiment}
-    except Exception:
-        return classify_with_rules(normalized_text)
 
 
 def notify_n8n_if_negative(description: str, category: str, sentiment: str, ticket_id: Optional[str] = None):
@@ -252,12 +388,30 @@ def notify_n8n_if_negative(description: str, category: str, sentiment: str, tick
             headers={"Content-Type": "application/json"}
         )
     except Exception as e:
-        print(f"Warning: No se pudo notificar a n8n: {e}")
+        logger.warning(f"n8n: Failed to notify webhook - {type(e).__name__}: {e}")
 
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/diagnostics")
+def diagnostics():
+    """Endpoint to check LLM status and configuration"""
+    llm_status = test_llm_connection()
+    
+    return {
+        "llm": llm_status,
+        "config": {
+            "hf_model": os.getenv("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.2"),
+            "hf_token_configured": bool(os.getenv("HF_API_TOKEN")),
+            "confidence_threshold": float(os.getenv("LLM_CONFIDENCE_THRESHOLD", "0.5")),
+            "n8n_webhook_configured": bool(os.getenv("N8N_WEBHOOK_URL")),
+            "supabase_configured": bool(os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_ROLE_KEY")),
+        },
+        "timestamp": time.time()
+    }
 
 
 @app.post("/create-ticket", response_model=dict)
