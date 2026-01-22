@@ -192,7 +192,6 @@ Respuesta ejemplo:
   },
   "config": {
     "hf_model": "mistralai/Mistral-7B-Instruct-v0.3",
-    "hf_inference_provider": "hf-inference",
     "hf_token_configured": true,
     "confidence_threshold": 0.5
   }
@@ -217,6 +216,6 @@ Respuesta ejemplo:
 ### Troubleshooting
 
 **Si el LLM no funciona:**
-1. Verifica `/diagnostics` - Si `llm.available` es `false`, revisa `HF_API_TOKEN` y `HF_INFERENCE_PROVIDER`
+1. Verifica `/diagnostics` - Si `llm.available` es `false`, revisa `HF_API_TOKEN`
 2. Revisa logs en Render - Busca errores específicos
 3. El sistema automáticamente usa reglas si el LLM falla (no se rompe)
