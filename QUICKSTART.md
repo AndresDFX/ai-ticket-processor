@@ -129,6 +129,7 @@ La API llama automáticamente al webhook de n8n cuando detecta un ticket con sen
 **Payload que recibe n8n desde la API**:
 - `body.description`, `body.category`, `body.sentiment`, `body.id`
 - Opcional: `email_from`, `email_to`, `email_subject` (para sobreescribir el correo)
+- Telegram: configurar `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en n8n
 
 ### Opción A: n8n Cloud (Recomendado para producción)
 
@@ -145,8 +146,8 @@ La API llama automáticamente al webhook de n8n cuando detecta un ticket con sen
    - **User**: Tu email de Gmail
    - **Password**: Contraseña de aplicación de Gmail (ver sección Gmail abajo)
    - **Host**: `smtp.gmail.com`
-   - **Port**: `587`
-   - **Secure**: `TLS`
+   - **Port**: `465`
+   - **Secure**: `SSL/TLS`
    - **Sender Email**: Tu email de Gmail
 4. Configura el email (ya viene con valores Gmail por defecto en el workflow):
    - **From Email**: `tu-email@gmail.com`
@@ -187,6 +188,13 @@ La API llama automáticamente al webhook de n8n cuando detecta un ticket con sen
 2. La API procesará el ticket automáticamente
 3. Si el sentimiento es "Negativo", recibirás un email en el correo configurado
 4. Verifica en **"Executions"** de n8n que el workflow se ejecutó
+
+#### Paso 7: (Opcional) Telegram
+1. En n8n, crea dos variables de entorno:
+   - `TELEGRAM_BOT_TOKEN`
+   - `TELEGRAM_CHAT_ID`
+2. Guarda cambios y vuelve a ejecutar el workflow.
+3. **Esperado**: llega un mensaje de Telegram con el detalle del ticket.
 
 ### Opción B: n8n en local con Docker (para desarrollo)
 
@@ -230,7 +238,8 @@ La API llama automáticamente al webhook de n8n cuando detecta un ticket con sen
 2. Configura el nodo **Email** con credenciales SMTP (Gmail recomendado).
 3. Activa el workflow y copia la **URL del webhook** (Production URL).
 4. Agrega `N8N_WEBHOOK_URL` en las variables de entorno de Render.
-5. **Listo**: Ahora cuando crees un ticket negativo desde el frontend, recibirás un email automáticamente.
+5. Configura `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en n8n si quieres alertas por Telegram.
+6. **Listo**: Ahora cuando crees un ticket negativo desde el frontend, recibirás alertas automáticamente.
 
 ## 🔧 Desarrollo Local (sin Docker)
 

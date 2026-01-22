@@ -7,6 +7,7 @@ HF_API_TOKEN=your-hf-api-token
 HF_MODEL=mistralai/Mistral-7B-Instruct-v0.2
 PORT=8001
 N8N_WEBHOOK_URL=https://tu-workspace.n8n.cloud/webhook/support-copilot-webhook
+LLM_CONFIDENCE_THRESHOLD=0.6
 ```
 
 **Nota sobre N8N_WEBHOOK_URL**: 

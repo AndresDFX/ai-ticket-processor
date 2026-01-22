@@ -73,6 +73,12 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
 - Navegación por teclado con focus-visible.
 - Alto contraste en todos los elementos interactivos.
 
+## 🧠 Clasificación Inteligente
+- Normalización de jerga antes de clasificar (ej. "rey", "bro", "malísimo").
+- Umbral de confianza configurable para LLM (`LLM_CONFIDENCE_THRESHOLD`).
+- Fallback automático a reglas cuando el modelo es ambiguo.
+- Categorías ampliadas para tickets: Acceso, Cuenta, Facturación, Comercial, Técnico, Rendimiento, UX/UI, Seguridad, Integraciones, Móvil y Solicitudes.
+
 ## 🔔 Notificaciones Automáticas (n8n)
 
 El sistema está integrado con **n8n** para enviar notificaciones por email automáticamente:
@@ -86,6 +92,7 @@ El sistema está integrado con **n8n** para enviar notificaciones por email auto
 - **Configuración**: Agrega `N8N_WEBHOOK_URL` en las variables de entorno de la API (ver `python-api/ENV_EXAMPLE.md`)
 - Si no configuras `N8N_WEBHOOK_URL`, el sistema funciona pero no envía emails
 - **Payload**: n8n recibe los datos en `body` (`body.description`, `body.category`, `body.sentiment`, `body.id`)
+- **Telegram**: el workflow incluye envío opcional por Telegram (configura `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en n8n).
 
 ## 🐳 Docker Compose (Recomendado)
 

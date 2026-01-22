@@ -37,10 +37,23 @@
         "text": "={{ 'Se ha recibido un ticket con sentimiento negativo:\\n\\n' +\n  'Descripción: ' + ($json.body && $json.body.description || $json.description || 'N/A') + '\\n' +\n  'Categoría: ' + ($json.body && $json.body.category || $json.category || 'N/A') + '\\n' +\n  'Sentimiento: ' + ($json.body && $json.body.sentiment || $json.sentiment || 'N/A') + '\\n' +\n  'ID del Ticket: ' + ($json.body && $json.body.id || $json.id || 'N/A') + '\\n\\n' +\n  'Por favor, revisar con prioridad.' }}",
         "html": "={{ '<div style=\"font-family: Arial, sans-serif; background-color: #f8fafc; padding: 24px;\">' +\n  '<div style=\"max-width: 640px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;\">' +\n  '<div style=\"background: #dc2626; color: #ffffff; padding: 16px 20px;\">' +\n  '<h2 style=\"margin: 0; font-size: 18px;\">\\u26a0\\ufe0f Ticket con sentimiento negativo</h2>' +\n  '</div>' +\n  '<div style=\"padding: 20px; color: #0f172a;\">' +\n  '<p style=\"margin: 0 0 12px;\">Se detectó un ticket con sentimiento negativo. Revisa el detalle:</p>' +\n  '<table style=\"width: 100%; border-collapse: collapse;\">' +\n  '<tr><td style=\"padding: 8px 0; font-weight: 600; width: 140px;\">Descripción</td><td style=\"padding: 8px 0;\">' + ($json.body && $json.body.description || $json.description || 'N/A') + '</td></tr>' +\n  '<tr><td style=\"padding: 8px 0; font-weight: 600;\">Categoría</td><td style=\"padding: 8px 0;\">' + ($json.body && $json.body.category || $json.category || 'N/A') + '</td></tr>' +\n  '<tr><td style=\"padding: 8px 0; font-weight: 600;\">Sentimiento</td><td style=\"padding: 8px 0;\">' + ($json.body && $json.body.sentiment || $json.sentiment || 'N/A') + '</td></tr>' +\n  '<tr><td style=\"padding: 8px 0; font-weight: 600;\">ID del Ticket</td><td style=\"padding: 8px 0;\">' + ($json.body && $json.body.id || $json.id || 'N/A') + '</td></tr>' +\n  '</table>' +\n  '<div style=\"margin-top: 20px;\">' +\n  '<a href=\"https://ai-ticket-processor.vercel.app/\" style=\"display: inline-block; padding: 10px 16px; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 8px;\">Abrir dashboard</a>' +\n  '<span style=\"margin-left: 12px; color: #475569; font-size: 12px;\">Link directo al dashboard.</span>' +\n  '</div>' +\n  '</div>' +\n  '<div style=\"background: #f1f5f9; padding: 12px 20px; color: #64748b; font-size: 12px;\">AI Support Co-Pilot</div>' +\n  '</div>' +\n  '</div>' }}"
       },
-      "name": "Send Email (Simulado)",
+      "name": "Send Email",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
       "position": [760, 220]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.telegram.org/bot' + ($env.TELEGRAM_BOT_TOKEN || $json.telegram_bot_token || ($json.body && $json.body.telegram_bot_token) || 'YOUR_TELEGRAM_BOT_TOKEN') + '/sendMessage' }}",
+        "method": "POST",
+        "sendBody": true,
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ '{\"chat_id\": \"' + ($env.TELEGRAM_CHAT_ID || $json.telegram_chat_id || ($json.body && $json.body.telegram_chat_id) || 'YOUR_CHAT_ID') + '\", \"text\": \"⚠️ Ticket negativo\\n\\nDescripción: ' + ($json.body && $json.body.description || $json.description || 'N/A') + '\\nCategoría: ' + ($json.body && $json.body.category || $json.category || 'N/A') + '\\nSentimiento: ' + ($json.body && $json.body.sentiment || $json.sentiment || 'N/A') + '\\nID: ' + ($json.body && $json.body.id || $json.id || 'N/A') + '\\n\\nDashboard: https://ai-ticket-processor.vercel.app/\"}' }}"
+      },
+      "name": "Send Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [760, 380]
     }
   ],
   "connections": {
@@ -48,7 +61,10 @@
       "main": [[{"node": "If Sentiment Negative", "type": "main", "index": 0}]]
     },
     "If Sentiment Negative": {
-      "main": [[{"node": "Send Email (Simulado)", "type": "main", "index": 0}]]
+      "main": [
+        [{"node": "Send Email", "type": "main", "index": 0}],
+        [{"node": "Send Telegram", "type": "main", "index": 0}]
+      ]
     }
   },
   "active": false

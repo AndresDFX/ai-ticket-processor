@@ -50,18 +50,134 @@ def llm_client() -> Optional[HuggingFaceHub]:
     return HuggingFaceHub(repo_id=model, huggingfacehub_api_token=token)
 
 
+ALLOWED_CATEGORIES = {
+    "Acceso",
+    "Cuenta",
+    "Comercial",
+    "Facturación",
+    "Integraciones",
+    "Móvil",
+    "Rendimiento",
+    "Seguridad",
+    "Solicitudes",
+    "Técnico",
+    "UX/UI",
+}
+
+ALLOWED_SENTIMENTS = {"Positivo", "Neutral", "Negativo"}
+
+
+def _simplify_text(value: str) -> str:
+    return re.sub(r"\s+", "", value.strip().lower()).translate(
+        str.maketrans("áéíóúüñ", "aeiouun")
+    )
+
+
+def normalize_text(text: str) -> str:
+    replacements = {
+        r"\brey\b": "",
+        r"\bbro\b": "",
+        r"\bmalísimo\b": "muy malo",
+        r"\bmalisimo\b": "muy malo",
+        r"\bno sirve\b": "no funciona",
+        r"\bapp\b": "aplicacion",
+    }
+    normalized = text.lower()
+    for pattern, replacement in replacements.items():
+        normalized = re.sub(pattern, replacement, normalized, flags=re.IGNORECASE)
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
+
+
+def normalize_category(value: str) -> str:
+    if not value:
+        return ""
+    simplified = _simplify_text(value)
+    alias_map = {
+        "tecnico": "Técnico",
+        "facturacion": "Facturación",
+        "comercial": "Comercial",
+        "acceso": "Acceso",
+        "cuenta": "Cuenta",
+        "rendimiento": "Rendimiento",
+        "performance": "Rendimiento",
+        "ux": "UX/UI",
+        "ui": "UX/UI",
+        "uxui": "UX/UI",
+        "usabilidad": "UX/UI",
+        "seguridad": "Seguridad",
+        "integraciones": "Integraciones",
+        "integracion": "Integraciones",
+        "movil": "Móvil",
+        "mobile": "Móvil",
+        "solicitudes": "Solicitudes",
+        "feature": "Solicitudes",
+        "request": "Solicitudes",
+    }
+    normalized = alias_map.get(simplified, value.strip())
+    return normalized if normalized in ALLOWED_CATEGORIES else ""
+
+
+def normalize_sentiment(value: str) -> str:
+    if not value:
+        return ""
+    simplified = _simplify_text(value)
+    alias_map = {
+        "positivo": "Positivo",
+        "positive": "Positivo",
+        "neutral": "Neutral",
+        "negativo": "Negativo",
+        "negative": "Negativo",
+    }
+    normalized = alias_map.get(simplified, value.strip().capitalize())
+    return normalized if normalized in ALLOWED_SENTIMENTS else ""
+
+
 def classify_with_rules(text: str) -> dict:
     text_lower = text.lower()
     category = "Técnico"
-    if any(k in text_lower for k in ["factura", "billing", "cobro", "pago", "suscripción"]):
-        category = "Facturación"
-    if any(k in text_lower for k in ["precio", "plan", "cotización", "ventas", "comercial"]):
-        category = "Comercial"
+
+    category_rules = [
+        ("Facturación", ["factura", "billing", "cobro", "pago", "suscripción", "reembolso"]),
+        ("Acceso", ["login", "inicio de sesión", "contraseña", "bloqueo", "2fa", "otp"]),
+        ("Cuenta", ["perfil", "cuenta", "usuario", "registro", "alta", "baja"]),
+        ("Integraciones", ["api", "webhook", "zapier", "slack", "integración", "integraciones"]),
+        ("Rendimiento", ["lento", "latencia", "demora", "performance", "rendimiento"]),
+        ("UX/UI", ["diseño", "ui", "ux", "interfaz", "botón", "boton", "pantalla"]),
+        ("Seguridad", ["phishing", "fraude", "seguridad", "vulnerabilidad", "hack"]),
+        ("Solicitudes", ["quiero", "me gustaría", "feature", "mejorar", "solicitud"]),
+        ("Comercial", ["precio", "plan", "cotización", "ventas", "comercial"]),
+        ("Móvil", ["android", "ios", "móvil", "movil", "celular"]),
+        ("Técnico", ["error", "fallo", "bug", "no funciona", "no sirve", "crash"]),
+    ]
+
+    for name, keywords in category_rules:
+        if any(k in text_lower for k in keywords):
+            category = name
+            break
 
     sentiment = "Neutral"
-    if any(k in text_lower for k in ["no funciona", "error", "fallo", "mal", "terrible", "molesto"]):
+    if any(
+        k in text_lower
+        for k in [
+            "no funciona",
+            "no sirve",
+            "no carga",
+            "se cae",
+            "error",
+            "fallo",
+            "mal",
+            "terrible",
+            "molesto",
+            "horrible",
+            "pésimo",
+            "pesimo",
+            "bug",
+            "fatal",
+        ]
+    ):
         sentiment = "Negativo"
-    if any(k in text_lower for k in ["gracias", "excelente", "genial", "perfecto", "bien"]):
+    if any(k in text_lower for k in ["gracias", "excelente", "genial", "perfecto", "bien", "buenísimo"]):
         sentiment = "Positivo"
 
     return {"category": category, "sentiment": sentiment}
@@ -75,26 +191,41 @@ def parse_json_from_text(text: str) -> dict:
 
 
 def classify_ticket(description: str) -> dict:
+    normalized_text = normalize_text(description)
     llm = llm_client()
     if not llm:
-        return classify_with_rules(description)
+        return classify_with_rules(normalized_text)
 
     prompt = (
         "Classify the support ticket into category and sentiment. "
         "Return ONLY valid JSON with keys: category, sentiment. "
-        "Categories: Tecnico, Facturacion, Comercial. "
+        "Categories: Tecnico, Facturacion, Comercial, Acceso, Cuenta, Rendimiento, UX/UI, "
+        "Seguridad, Integraciones, Movil, Solicitudes. "
         "Sentiment: Positivo, Neutral, Negativo.\n\n"
-        f"Ticket: {description}\n"
+        f"Ticket: {normalized_text}\n"
         "JSON:"
     )
     response = llm.invoke(prompt)
     try:
         result = parse_json_from_text(response)
-        category = result.get("category", "Tecnico")
-        sentiment = result.get("sentiment", "Neutral")
+        category = normalize_category(result.get("category", ""))
+        sentiment = normalize_sentiment(result.get("sentiment", ""))
+        confidence = 1.0
+
+        if not category or not sentiment:
+            confidence = 0.0
+        if "?" in response or "no estoy seguro" in response.lower():
+            confidence = min(confidence, 0.4)
+        if len(response) > 500:
+            confidence = min(confidence, 0.5)
+
+        threshold = float(os.getenv("LLM_CONFIDENCE_THRESHOLD", "0.6"))
+        if confidence < threshold:
+            return classify_with_rules(normalized_text)
+
         return {"category": category, "sentiment": sentiment}
     except Exception:
-        return classify_with_rules(description)
+        return classify_with_rules(normalized_text)
 
 
 def notify_n8n_if_negative(description: str, category: str, sentiment: str, ticket_id: Optional[str] = None):

@@ -58,18 +58,28 @@ curl -X POST http://localhost:8001/create-ticket \
 2. Verifica en n8n → **Executions** que el workflow se ejecutó
 3. **Esperado**: llega un email con formato HTML y los datos del ticket
 
-### Test 6: Seed de Datos
+### Test 6: Notificación Telegram (opcional)
+**Precondiciones**:
+- `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` configurados en n8n
+- Workflow activo
+
+1. Crea un ticket negativo desde el frontend
+2. Verifica en n8n → **Executions** que el workflow se ejecutó
+3. **Esperado**: llega un mensaje con el detalle del ticket en Telegram
+
+### Test 7: Seed de Datos
 ```bash
 chmod +x seed-api.sh
 ./seed-api.sh
 ```
 **Esperado**: 3 tickets creados y procesados
 
-### Test 7: Clasificación por Reglas (sin LLM)
+### Test 8: Clasificación por Reglas (sin LLM)
 Si no configuraste `HF_API_TOKEN`, el sistema usa reglas:
 - "No funciona el login" → Técnico, Negativo
 - "Necesito factura" → Facturación, Neutral
 - "¿Tienen descuentos?" → Comercial, Positivo
+- "La app no sirve rey" → Técnico, Negativo
 
 ## 🔍 Verificación de Logs
 
