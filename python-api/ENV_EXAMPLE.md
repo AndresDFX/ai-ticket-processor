@@ -7,6 +7,8 @@ HF_API_TOKEN=your-hf-api-token
 HF_MODEL=mistralai/Ministral-3-3B-Instruct-2512
 # Para Hugging Face Router (por defecto):
 LLM_API_BASE_URL=https://router.huggingface.co/v1/chat/completions
+# Si el modelo no es "chat", se puede usar completions:
+# LLM_API_BASE_URL=https://router.huggingface.co/v1/completions
 # Para vLLM local (sin token):
 # LLM_API_BASE_URL=http://localhost:8000/v1/chat/completions
 # LLM_API_TOKEN=optional-if-your-endpoint-requires-it

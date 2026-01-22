@@ -23,9 +23,8 @@ class OpenAICompatibleAPI:
         if token:
             self.headers["Authorization"] = f"Bearer {token}"
 
-    def invoke(self, prompt: str) -> str:
-        """Invoca el modelo y retorna la respuesta."""
-        payload = {
+    def _build_chat_payload(self, prompt: str) -> dict:
+        return {
             "model": self.model,
             "messages": [
                 {"role": "user", "content": prompt}
@@ -33,6 +32,32 @@ class OpenAICompatibleAPI:
             "temperature": float(os.getenv("LLM_TEMPERATURE", "0.1")),
             "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "200"))
         }
+
+    def _build_completion_payload(self, prompt: str) -> dict:
+        return {
+            "model": self.model,
+            "prompt": prompt,
+            "temperature": float(os.getenv("LLM_TEMPERATURE", "0.1")),
+            "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "200"))
+        }
+
+    def _extract_text(self, result: dict) -> Optional[str]:
+        if not isinstance(result, dict):
+            return None
+        choices = result.get("choices", [])
+        if not choices or not isinstance(choices[0], dict):
+            return None
+        message = choices[0].get("message", {})
+        if isinstance(message, dict) and "content" in message:
+            return message["content"]
+        if "text" in choices[0]:
+            return choices[0]["text"]
+        return None
+
+    def invoke(self, prompt: str) -> str:
+        """Invoca el modelo y retorna la respuesta."""
+        is_chat_endpoint = self.api_url.rstrip("/").endswith("/v1/chat/completions")
+        payload = self._build_chat_payload(prompt) if is_chat_endpoint else self._build_completion_payload(prompt)
         
         # Ministral-3 soporta JSON nativo, pero Hugging Face Router puede no soportar response_format
         # El prompt ya está optimizado para JSON, así que no es necesario
@@ -43,6 +68,23 @@ class OpenAICompatibleAPI:
             headers=self.headers,
             timeout=30
         )
+        if response.status_code == 400 and is_chat_endpoint:
+            try:
+                error_body = response.json()
+                error_info = error_body.get("error", {})
+                error_code = error_info.get("code")
+                error_message = str(error_info.get("message", "")).lower()
+                if error_code == "model_not_supported" and "not a chat model" in error_message:
+                    fallback_url = self.api_url.replace("/v1/chat/completions", "/v1/completions")
+                    logger.warning("LLM: Model is not chat-compatible, retrying via completions endpoint")
+                    response = requests.post(
+                        fallback_url,
+                        json=self._build_completion_payload(prompt),
+                        headers=self.headers,
+                        timeout=30
+                    )
+            except ValueError:
+                pass
         if response.status_code >= 400:
             logger.error(
                 "LLM: HTTP %s from %s - %s",
@@ -53,12 +95,9 @@ class OpenAICompatibleAPI:
         response.raise_for_status()
 
         result = response.json()
-        if isinstance(result, dict):
-            choices = result.get("choices", [])
-            if choices and isinstance(choices[0], dict):
-                message = choices[0].get("message", {})
-                if isinstance(message, dict) and "content" in message:
-                    return message["content"]
+        extracted = self._extract_text(result)
+        if extracted is not None:
+            return extracted
 
         logger.warning(f"LLM: Unexpected response format: {result}")
         return str(result)
