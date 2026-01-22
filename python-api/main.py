@@ -13,6 +13,60 @@ from pydantic import BaseModel
 from supabase import create_client, Client
 from langchain_community.llms import HuggingFaceHub
 
+class HuggingFaceAPI:
+    """Wrapper para la nueva API de Hugging Face"""
+    def __init__(self, model: str, token: str):
+        self.model = model
+        self.token = token
+        self.api_url = f"https://router.huggingface.co/models/{model}"
+        self.headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+    
+    def invoke(self, prompt: str) -> str:
+        """Invoca el modelo y retorna la respuesta"""
+        payload = {
+            "inputs": prompt,
+            "parameters": {
+                "temperature": 0.1,
+                "max_new_tokens": 200,
+                "return_full_text": False
+            }
+        }
+        
+        response = requests.post(
+            self.api_url,
+            json=payload,
+            headers=self.headers,
+            timeout=30
+        )
+        response.raise_for_status()
+        
+        result = response.json()
+        
+        if isinstance(result, list) and len(result) > 0:
+            item = result[0]
+            if isinstance(item, dict):
+                if "generated_text" in item:
+                    return item["generated_text"]
+                elif "text" in item:
+                    return item["text"]
+            elif isinstance(item, str):
+                return item
+        elif isinstance(result, dict):
+            if "generated_text" in result:
+                return result["generated_text"]
+            elif "text" in result:
+                return result["text"]
+            elif "output" in result:
+                return result["output"]
+        elif isinstance(result, str):
+            return result
+        
+        logger.warning(f"LLM: Unexpected response format: {type(result)}")
+        return str(result)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -50,22 +104,14 @@ def get_supabase() -> Optional[Client]:
     return create_client(url, key)
 
 
-def llm_client() -> Optional[HuggingFaceHub]:
+def llm_client() -> Optional[HuggingFaceAPI]:
     token = os.getenv("HF_API_TOKEN")
     model = os.getenv("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.2")
     if not token:
         logger.warning("LLM: HF_API_TOKEN not configured, using rules fallback")
         return None
     try:
-        client = HuggingFaceHub(
-            repo_id=model,
-            huggingfacehub_api_token=token,
-            model_kwargs={
-                "temperature": 0.1,
-                "max_new_tokens": 200,
-                "return_full_text": False,
-            }
-        )
+        client = HuggingFaceAPI(model=model, token=token)
         logger.info(f"LLM: Client initialized successfully with model {model}")
         return client
     except Exception as e:
@@ -90,7 +136,23 @@ def test_llm_connection() -> dict:
             "status": "working",
             "message": "LLM responded successfully",
             "available": True,
-            "test_response_length": len(response) if response else 0
+            "test_response_length": len(response) if response else 0,
+            "test_response_preview": response[:100] if response else None
+        }
+    except requests.exceptions.HTTPError as e:
+        error_msg = str(e)
+        if "410" in error_msg or "Gone" in error_msg:
+            return {
+                "status": "error",
+                "message": "Hugging Face API endpoint deprecated. Using new router API.",
+                "available": False,
+                "error": error_msg
+            }
+        return {
+            "status": "error",
+            "message": f"LLM test failed: HTTP {e.response.status_code if hasattr(e, 'response') else 'Unknown'}",
+            "available": False,
+            "error": error_msg
         }
     except Exception as e:
         return {
@@ -302,7 +364,15 @@ Ticket a clasificar: {normalized_text}
 JSON:"""
             
             start_time = time.time()
-            response = llm.invoke(prompt_text)
+            try:
+                response = llm.invoke(prompt_text)
+            except requests.exceptions.HTTPError as e:
+                if e.response and e.response.status_code == 503:
+                    logger.warning("LLM: Model is loading, will retry...")
+                    if attempt < max_retries - 1:
+                        time.sleep(2)
+                        continue
+                raise
             elapsed = time.time() - start_time
             
             logger.info(f"LLM: Response received in {elapsed:.2f}s, length: {len(response) if response else 0}")
