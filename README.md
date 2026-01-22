@@ -78,10 +78,13 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
 - Umbral de confianza configurable para LLM (`LLM_CONFIDENCE_THRESHOLD`).
 - Fallback automático a reglas cuando el modelo es ambiguo.
 - Categorías ampliadas para tickets: Acceso, Cuenta, Facturación, Comercial, Técnico, Rendimiento, UX/UI, Seguridad, Integraciones, Móvil y Solicitudes.
-- **Modelo LLM por defecto**: `mistralai/Mistral-7B-Instruct-v0.3` (compatible con Hugging Face Router API)
+- **Modelo LLM por defecto**: `mistralai/Ministral-3-3B-Instruct-2512` (optimizado para edge, 4B parámetros, FP8)
+  - Soporte nativo para JSON outputting
+  - Temperatura recomendada: 0.1 (ya configurada)
+  - Ideal para clasificación de tickets en tiempo real
 - **Modelos alternativos recomendados**:
-  - `mistralai/Ministral-3-3B-Instruct-2512` (más rápido, 4B parámetros)
-  - `mistralai/Ministral-3-8B-Instruct-2512` (balance, 9B parámetros)
+  - `mistralai/Ministral-3-8B-Instruct-2512` (mayor capacidad, 9B parámetros)
+  - `mistralai/Mistral-7B-Instruct-v0.3` (modelo anterior, compatible)
 
 ## 🔔 Notificaciones Automáticas (n8n)
 
@@ -191,7 +194,7 @@ Respuesta ejemplo:
     "available": true
   },
   "config": {
-    "hf_model": "mistralai/Mistral-7B-Instruct-v0.3",
+    "hf_model": "mistralai/Ministral-3-3B-Instruct-2512",
     "hf_token_configured": true,
     "confidence_threshold": 0.5
   }

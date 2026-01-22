@@ -34,6 +34,9 @@ class HuggingFaceAPI:
             "temperature": 0.1,
             "max_tokens": 200
         }
+        
+        # Ministral-3 soporta JSON nativo, pero Hugging Face Router puede no soportar response_format
+        # El prompt ya está optimizado para JSON, así que no es necesario
 
         response = requests.post(
             self.api_url,
@@ -93,7 +96,7 @@ def get_supabase() -> Optional[Client]:
 
 def llm_client() -> Optional[HuggingFaceAPI]:
     token = os.getenv("HF_API_TOKEN")
-    model = os.getenv("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.3")
+    model = os.getenv("HF_MODEL", "mistralai/Ministral-3-3B-Instruct-2512")
     if not token:
         logger.warning("LLM: HF_API_TOKEN not configured, using rules fallback")
         return None
@@ -323,7 +326,7 @@ def classify_ticket(description: str) -> dict:
     for attempt in range(max_retries):
         try:
             logger.info(f"Classification: Attempt {attempt + 1} with LLM for ticket: {description[:50]}...")
-            prompt_text = f"""Eres un clasificador de tickets de soporte. Tu tarea es analizar el texto y devolver SOLO un JSON válido con dos claves: "category" y "sentiment".
+            prompt_text = f"""Eres un clasificador de tickets de soporte. Analiza el texto y devuelve un JSON válido con exactamente dos claves: "category" y "sentiment".
 
 Categorías disponibles (elige UNA):
 - Técnico: errores, bugs, fallos técnicos, problemas de funcionamiento
@@ -343,12 +346,10 @@ Sentimientos (elige UNO):
 - Neutral: consultas, preguntas, información
 - Negativo: quejas, problemas, frustración, errores
 
-IMPORTANTE: Responde SOLO con JSON válido, sin texto adicional. Ejemplo:
+Responde SOLO con JSON válido. Ejemplo de formato:
 {{"category": "Técnico", "sentiment": "Negativo"}}
 
-Ticket a clasificar: {normalized_text}
-
-JSON:"""
+Ticket a clasificar: {normalized_text}"""
             
             start_time = time.time()
             try:
@@ -461,7 +462,7 @@ def diagnostics():
     return {
         "llm": llm_status,
         "config": {
-            "hf_model": os.getenv("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.3"),
+            "hf_model": os.getenv("HF_MODEL", "mistralai/Ministral-3-3B-Instruct-2512"),
             "hf_token_configured": bool(os.getenv("HF_API_TOKEN")),
             "confidence_threshold": float(os.getenv("LLM_CONFIDENCE_THRESHOLD", "0.5")),
             "n8n_webhook_configured": bool(os.getenv("N8N_WEBHOOK_URL")),
