@@ -44,7 +44,7 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
 - `start.sh`: script de inicio rápido
 - `setup-env.sh`: script para crear archivos .env
 
-## 📝 URLs de entrega (completa cuando despliegues)
+## 📝 URLs de entrega
 - Dashboard: https://ai-ticket-processor.vercel.app/
 - API Python: https://ai-ticket-processor.onrender.com/docs
 
