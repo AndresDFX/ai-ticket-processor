@@ -106,7 +106,7 @@ def get_supabase() -> Optional[Client]:
 
 def llm_client() -> Optional[HuggingFaceAPI]:
     token = os.getenv("HF_API_TOKEN")
-    model = os.getenv("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.2")
+    model = os.getenv("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.3")
     if not token:
         logger.warning("LLM: HF_API_TOKEN not configured, using rules fallback")
         return None
@@ -474,7 +474,7 @@ def diagnostics():
     return {
         "llm": llm_status,
         "config": {
-            "hf_model": os.getenv("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.2"),
+            "hf_model": os.getenv("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.3"),
             "hf_token_configured": bool(os.getenv("HF_API_TOKEN")),
             "confidence_threshold": float(os.getenv("LLM_CONFIDENCE_THRESHOLD", "0.5")),
             "n8n_webhook_configured": bool(os.getenv("N8N_WEBHOOK_URL")),
