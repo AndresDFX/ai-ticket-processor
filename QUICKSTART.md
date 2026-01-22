@@ -31,9 +31,14 @@
 
 **API (`python-api/.env`):**
 ```bash
-cd <project-root>
-cp python-api/.env.example python-api/.env
-# Edita python-api/.env con tus credenciales
+# Opción A: Usar script automático (recomendado)
+chmod +x setup-env.sh
+./setup-env.sh
+
+# Opción B: Crear manualmente
+# Ver python-api/ENV_EXAMPLE.md para todas las variables
+
+# Luego edita python-api/.env con tus credenciales reales
 ```
 
 **Nota sobre el LLM:**
@@ -374,8 +379,8 @@ npm run dev
 
 ## 📚 Próximos Pasos
 
-1. **Configurar n8n**: Importa `n8n-workflow/workflow.json` y conecta el webhook
-2. **Desplegar a producción**: Ver sección "Deploy" en `README.md`
+1. **Configurar n8n**: Importa `n8n-workflow/workflow.json` y conecta el webhook (ver sección n8n arriba)
+2. **Desplegar a producción**: Ver [DEPLOY.md](./DEPLOY.md) para guía completa paso a paso
 3. **Personalizar categorías**: Edita `classify_with_rules()` en `python-api/main.py`
 
 ---

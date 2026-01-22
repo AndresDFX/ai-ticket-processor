@@ -143,26 +143,81 @@ chmod +x seed-api.sh
 - **Frontend**: Vercel / Netlify
 - **n8n**: instancia local o cloud (importar workflow)
 
-## Deploy paso a paso (sugerido)
+👉 **Ver [DEPLOY.md](./DEPLOY.md) para guía completa paso a paso con troubleshooting**
+
+## Deploy paso a paso (resumen)
 
 ### API (Render)
-1) Crea un nuevo **Web Service**.
-2) Conecta el repo y selecciona `/python-api`.
-3) Build command:
-```
-pip install -r requirements.txt
-```
-4) Start command:
-```
-uvicorn main:app --host 0.0.0.0 --port 8001
-```
-5) Configura variables de entorno (ver `python-api/ENV_EXAMPLE.md`).
+
+1. **Crear Web Service en Render**:
+   - Ve a https://render.com/dashboard
+   - Click en **"New"** → **"Web Service"**
+   - Conecta tu repositorio de GitHub
+
+2. **Configuración del servicio**:
+   - **Name**: `ai-ticket-processor-api` (o el nombre que prefieras)
+   - **Region**: Elige la región más cercana
+   - **Branch**: `main` (o la rama que uses)
+   - **Root Directory**: `python-api` ⚠️ **IMPORTANTE**
+   - **Runtime**: `Docker` (o `Python 3` si prefieres)
+   - **Instance Type**: `Free` (para empezar) o `Starter` ($7/mes)
+
+3. **Build & Deploy** (si usas Docker):
+   - **Dockerfile Path**: `./Dockerfile` (ya está en `python-api/`)
+   - Render detectará automáticamente el Dockerfile
+
+4. **Start Command** (si NO usas Docker):
+   ```
+   uvicorn main:app --host 0.0.0.0 --port $PORT
+   ```
+   ⚠️ Render inyecta `$PORT` automáticamente, no uses `8001` fijo
+
+5. **Variables de entorno en Render**:
+   Ve a **Environment** y agrega todas estas variables:
+   ```
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+   HF_API_TOKEN=your-hf-api-token
+   HF_MODEL=meta-llama/Llama-3.1-8B-Instruct
+   LLM_API_BASE_URL=https://router.huggingface.co/v1/chat/completions
+   LLM_TEMPERATURE=0.1
+   LLM_MAX_TOKENS=200
+   LLM_CONFIDENCE_THRESHOLD=0.6
+   N8N_WEBHOOK_URL=https://tu-workspace.n8n.cloud/webhook/support-copilot-webhook
+   ```
+   ⚠️ **NO agregues** `PORT` - Render lo inyecta automáticamente
+
+6. **Health Check** (opcional pero recomendado):
+   - **Health Check Path**: `/health`
+
+7. **Deploy**: Click en **"Create Web Service"** y espera el deploy
+
+8. **Verificar**: Una vez desplegado, ve a `https://tu-api.onrender.com/docs` para ver la documentación
 
 ### Frontend (Vercel)
-1) Importa el repo y selecciona `/frontend`.
-2) Build command: `npm run build`
-3) Output directory: `dist`
-4) Configura variables de entorno (ver `frontend/ENV_EXAMPLE.md`).
+
+1. **Importar proyecto**:
+   - Ve a https://vercel.com/dashboard
+   - Click en **"Add New"** → **"Project"**
+   - Importa tu repositorio de GitHub
+
+2. **Configuración**:
+   - **Framework Preset**: `Vite`
+   - **Root Directory**: `frontend` ⚠️ **IMPORTANTE**
+   - **Build Command**: `npm run build` (automático con Vite)
+   - **Output Directory**: `dist` (automático con Vite)
+
+3. **Variables de entorno en Vercel**:
+   ```
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key
+   VITE_API_URL=https://tu-api.onrender.com
+   ```
+   ⚠️ **IMPORTANTE**: `VITE_API_URL` debe apuntar a tu API de Render
+
+4. **Deploy**: Click en **"Deploy"** y espera
+
+5. **Verificar**: Una vez desplegado, abre la URL de Vercel y prueba crear un ticket
 
 ### n8n
 1) Importa `n8n-workflow/workflow.json` en n8n Cloud.

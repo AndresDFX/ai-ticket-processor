@@ -11,8 +11,13 @@ if [ ! -f "python-api/.env" ]; then
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 HF_API_TOKEN=your-hf-api-token
-HF_MODEL=mistralai/Ministral-3-3B-Instruct-2512
+HF_MODEL=meta-llama/Llama-3.1-8B-Instruct
+LLM_API_BASE_URL=https://router.huggingface.co/v1/chat/completions
+LLM_TEMPERATURE=0.1
+LLM_MAX_TOKENS=200
+LLM_CONFIDENCE_THRESHOLD=0.6
 PORT=8001
+N8N_WEBHOOK_URL=
 EOF
     echo "✅ python-api/.env creado"
 else
