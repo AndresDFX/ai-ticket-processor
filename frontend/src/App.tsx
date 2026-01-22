@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Eye, CheckCircle, XCircle, AlertCircle, Loader2, Search } from 'lucide-react';
+import { Plus, Eye, CheckCircle, XCircle, AlertCircle, Loader2, Search, Edit, Trash2 } from 'lucide-react';
 import ThemeToggle from './components/ThemeToggle';
 
 type Ticket = {
@@ -46,6 +46,10 @@ export default function App() {
   const [realtimeStatus, setRealtimeStatus] = useState('connecting');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
+  const [editDescription, setEditDescription] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [showTour, setShowTour] = useState(false);
@@ -214,6 +218,74 @@ export default function App() {
     }
   };
 
+  const handleEdit = (ticket: Ticket) => {
+    setEditingTicket(ticket);
+    setEditDescription(ticket.description);
+  };
+
+  const handleUpdate = async () => {
+    if (!editingTicket || !editDescription.trim()) return;
+
+    setIsUpdating(true);
+    try {
+      const response = await fetch(`${API_URL}/tickets/${editingTicket.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: editDescription }),
+      });
+      if (response.ok) {
+        setEditingTicket(null);
+        setEditDescription('');
+        addNotification('success', 'Ticket actualizado y re-evaluado por IA');
+        setSelectedTicket(null);
+      } else {
+        const error = await response.json();
+        addNotification('error', error.detail || 'Error al actualizar el ticket');
+      }
+    } catch (error) {
+      console.error('Error updating ticket:', error);
+      addNotification('error', 'Error de conexión al actualizar ticket');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = async (ticketId: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este ticket?')) return;
+
+    setIsDeleting(ticketId);
+    try {
+      const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        addNotification('success', 'Ticket eliminado exitosamente');
+        setSelectedTicket(null);
+      } else {
+        addNotification('error', 'Error al eliminar el ticket');
+      }
+    } catch (error) {
+      console.error('Error deleting ticket:', error);
+      addNotification('error', 'Error de conexión al eliminar ticket');
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  // Manejar parámetro de URL para abrir ticket directamente
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ticketId = params.get('ticket');
+    if (ticketId && tickets.length > 0) {
+      const ticket = tickets.find(t => t.id === ticketId);
+      if (ticket) {
+        setSelectedTicket(ticket);
+        // Limpiar el parámetro de la URL
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [tickets]);
+
   const filteredTickets = tickets.filter(ticket =>
     ticket.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ticket.category?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -325,7 +397,7 @@ export default function App() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    className="card p-4 cursor-pointer hover:bg-slate-800/50 transition-colors"
+                    className="card p-4 cursor-pointer hover:bg-slate-800/50 transition-colors relative group"
                     onClick={() => setSelectedTicket(ticket)}
                   >
                     <div className="flex items-start justify-between mb-2">
@@ -340,6 +412,30 @@ export default function App() {
                     <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                       <span>{ticket.category || 'Sin categoría'}</span>
                       <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <div 
+                      className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() => handleEdit(ticket)}
+                        className="p-1.5 rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                        title="Editar ticket"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(ticket.id)}
+                        disabled={isDeleting === ticket.id}
+                        className="p-1.5 rounded bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
+                        title="Eliminar ticket"
+                      >
+                        {isDeleting === ticket.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
                     </div>
                   </motion.div>
                 ))}
@@ -386,9 +482,32 @@ export default function App() {
                 className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full"
                 onClick={(e) => e.stopPropagation()}
               >
-                <h3 className="text-lg font-semibold mb-4">Detalles del Ticket</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Detalles del Ticket</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(selectedTicket)}
+                      className="p-2 rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                      title="Editar ticket"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(selectedTicket.id)}
+                      disabled={isDeleting === selectedTicket.id}
+                      className="p-2 rounded bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
+                      title="Eliminar ticket"
+                    >
+                      {isDeleting === selectedTicket.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <p><strong>ID:</strong> {selectedTicket.id}</p>
+                  <p><strong>ID:</strong> <span className="font-mono text-sm">{selectedTicket.id}</span></p>
                   <p><strong>Descripción:</strong> {selectedTicket.description}</p>
                   <p><strong>Categoría:</strong> {selectedTicket.category || 'Sin categoría'}</p>
                   <p><strong>Sentimiento:</strong> {selectedTicket.sentiment || 'Neutral'}</p>
@@ -401,6 +520,68 @@ export default function App() {
                 >
                   Cerrar
                 </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Modal para editar ticket */}
+        <AnimatePresence>
+          {editingTicket && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+              onClick={() => {
+                setEditingTicket(null);
+                setEditDescription('');
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-lg font-semibold mb-4">Editar Ticket</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  El ticket será re-evaluado por IA después de guardar.
+                </p>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Descripción del ticket..."
+                  className="w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus-visible:ring-2 focus-visible:ring-primary-400 min-h-[100px] resize-y"
+                  disabled={isUpdating}
+                />
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={handleUpdate}
+                    disabled={isUpdating || !editDescription.trim()}
+                    className="btn-primary flex-1 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isUpdating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Actualizando...
+                      </>
+                    ) : (
+                      'Guardar cambios'
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingTicket(null);
+                      setEditDescription('');
+                    }}
+                    disabled={isUpdating}
+                    className="px-4 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </motion.div>
             </motion.div>
           )}

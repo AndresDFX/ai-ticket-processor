@@ -131,6 +131,62 @@ VITE_API_URL=https://tu-api.onrender.com
 2. Deberías ver el dashboard
 3. Prueba crear un ticket
 4. Verifica que se actualice en tiempo real
+5. Prueba editar y eliminar tickets
+
+---
+
+## 🔔 Configurar n8n (Opcional)
+
+Si quieres recibir notificaciones por email y Telegram cuando un ticket tiene sentimiento negativo:
+
+### Paso 1: Importar Workflow
+
+1. Ve a https://app.n8n.io
+2. Click en **"Workflows"** → **"Add workflow"** → **"Import from File"**
+3. Selecciona `n8n-workflow/workflow.json` de tu repositorio
+
+### Paso 2: Configurar Variables en n8n
+
+1. Ve a **Settings → Variables**
+2. Agrega las siguientes variables:
+   - `EMAIL_FROM` → tu correo de Gmail
+   - `EMAIL_TO` → correo destinatario
+   - `FRONTEND_URL` → URL de tu frontend en Vercel (ej: `https://ai-ticket-processor.vercel.app`)
+     - ⚠️ **Importante**: Esta URL se usa para generar links directos a los tickets en las notificaciones
+   - `TELEGRAM_BOT_TOKEN` → token de tu bot de Telegram (opcional)
+   - `TELEGRAM_CHAT_ID` → ID del chat/grupo/canal de Telegram (opcional)
+
+### Paso 3: Configurar Credenciales
+
+1. **Email (Gmail)**:
+   - Abre el nodo "Send Email"
+   - Crea una credencial SMTP con tus datos de Gmail
+   - Usa contraseña de aplicación (no tu contraseña normal)
+
+2. **Telegram** (opcional):
+   - Abre el nodo "Send Telegram"
+   - Crea una credencial de Telegram con tu bot token
+
+### Paso 4: Obtener Webhook URL
+
+1. Abre el nodo "Webhook"
+2. Activa el workflow
+3. Copia la **Production URL** (ej: `https://tu-workspace.n8n.cloud/webhook/support-copilot-webhook`)
+
+### Paso 5: Configurar en Render
+
+1. Ve a tu servicio en Render → **Environment**
+2. Agrega:
+   - **Key**: `N8N_WEBHOOK_URL`
+   - **Value**: La URL del webhook que copiaste
+3. Guarda y espera el redeploy
+
+### Paso 6: Probar
+
+1. Crea un ticket con sentimiento negativo desde el frontend
+2. Deberías recibir:
+   - Email con link directo al ticket
+   - Mensaje en Telegram con link directo al ticket (si está configurado)
 
 ---
 
@@ -199,8 +255,10 @@ VITE_API_URL=https://tu-api.onrender.com
 - [ ] Frontend carga en `https://tu-app.vercel.app`
 - [ ] Puedo crear tickets desde el frontend
 - [ ] Los tickets se actualizan en tiempo real
-- [ ] (Opcional) Recibo emails cuando el sentimiento es negativo
-- [ ] (Opcional) Recibo mensajes de Telegram cuando el sentimiento es negativo
+- [ ] (Opcional) Recibo emails cuando el sentimiento es negativo con link directo al ticket
+- [ ] (Opcional) Recibo mensajes de Telegram cuando el sentimiento es negativo con link directo al ticket
+- [ ] Puedo editar tickets y se re-evalúan automáticamente por IA
+- [ ] Puedo eliminar tickets con confirmación
 
 ---
 

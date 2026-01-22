@@ -6,6 +6,8 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
 
 - **Dashboard Moderno**: Interfaz responsiva con animaciones suaves, tema oscuro accesible y navegación intuitiva.
 - **Experiencia de Usuario Mejorada**: Notificaciones en tiempo real, búsqueda de tickets, modales para detalles y indicadores visuales con iconos.
+- **Gestión Completa de Tickets**: Crear, editar y eliminar tickets con re-evaluación automática por IA al editar.
+- **Links Directos**: Las notificaciones (email y Telegram) incluyen links directos al ticket específico.
 - **Accesibilidad**: Soporte completo para navegación por teclado, etiquetas ARIA y alto contraste.
 - **Animaciones Fancy**: Transiciones fluidas con Framer Motion para una experiencia interactiva premium.
 - **Componentes Interactivos**: Botones con estados de carga, spinners animados y feedback visual inmediato.
@@ -62,6 +64,9 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
 - **Paginación**: Navegación paginada con controles anterior/siguiente y contador de páginas.
 - **Iconos Significativos**: Indicadores visuales con Lucide React para estados de sentimiento y procesamiento.
 - **Estados de Carga**: Spinners animados y botones con indicadores de progreso.
+- **Editar Tickets**: Botones de edición en cada card y en el modal de detalle, con re-evaluación automática por IA.
+- **Eliminar Tickets**: Botones de eliminación con confirmación, disponibles en cards y modal de detalle.
+- **Links Directos**: Los tickets pueden abrirse directamente desde URLs con parámetro `?ticket=ID`.
 
 ### Tecnologías Añadidas
 - **Framer Motion**: Para animaciones y transiciones premium.
@@ -107,6 +112,10 @@ El sistema está integrado con **n8n** para enviar notificaciones por email y Te
   - Agrega `N8N_WEBHOOK_URL` en las variables de entorno de la API (ver `python-api/ENV_EXAMPLE.md`)
   - Si no configuras `N8N_WEBHOOK_URL`, el sistema funciona pero no envía notificaciones
 - **Payload**: n8n recibe los datos en `body` (`body.description`, `body.category`, `body.sentiment`, `body.id`)
+- **Links Directos**: 
+  - Las notificaciones incluyen links directos al ticket específico usando el ID
+  - El link abre automáticamente el modal de detalle del ticket en el frontend
+  - Configura `FRONTEND_URL` en n8n (Settings → Variables) con la URL de tu frontend desplegado
 - **Telegram**: 
   - El workflow usa el nodo nativo de Telegram (mejor para grupos/canales)
   - Configura `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en n8n

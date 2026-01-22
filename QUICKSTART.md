@@ -223,11 +223,13 @@ La API llama automáticamente al webhook de n8n cuando detecta un ticket con sen
 
 **Importante**: El workflow solo envía mensajes cuando el sentimiento es **"Negativo"**.
 
-##### 7.1: Variables de Email en n8n
+##### 7.1: Variables de Email y Frontend en n8n
 1. Ve a **Settings → Variables**
 2. Agrega:
    - `EMAIL_FROM` → tu correo
    - `EMAIL_TO` → correo destinatario
+   - `FRONTEND_URL` → URL de tu frontend desplegado (ej: `https://ai-ticket-processor.vercel.app`)
+     - ⚠️ **Importante**: Esta URL se usa para generar links directos a los tickets en las notificaciones
 3. Guarda
 
 ##### 7.2: Crear el bot en Telegram

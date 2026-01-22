@@ -602,3 +602,66 @@ def process_ticket(ticket: TicketIn):
         sentiment=result["sentiment"],
         processed=processed,
     )
+
+
+@app.put("/tickets/{ticket_id}", response_model=dict)
+def update_ticket(ticket_id: str, ticket: TicketIn):
+    """Actualiza un ticket y lo re-evalúa con IA"""
+    if not ticket.description:
+        raise HTTPException(status_code=400, detail="description is required")
+
+    supabase = get_supabase()
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+
+    # Verificar que el ticket existe
+    existing = supabase.table("tickets").select("*").eq("id", ticket_id).execute()
+    if not existing.data or len(existing.data) == 0:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    # Re-evaluar con IA
+    classification = classify_ticket(ticket.description)
+
+    # Actualizar en Supabase
+    supabase.table("tickets").update(
+        {
+            "description": ticket.description,
+            "category": classification["category"],
+            "sentiment": classification["sentiment"],
+            "processed": True,
+        }
+    ).eq("id", ticket_id).execute()
+
+    # Notificar n8n si es negativo
+    notify_n8n_if_negative(
+        ticket.description,
+        classification["category"],
+        classification["sentiment"],
+        ticket_id
+    )
+
+    return {
+        "ticket_id": ticket_id,
+        "category": classification["category"],
+        "sentiment": classification["sentiment"],
+        "processed": True,
+        "message": "Ticket actualizado y re-evaluado"
+    }
+
+
+@app.delete("/tickets/{ticket_id}")
+def delete_ticket(ticket_id: str):
+    """Elimina un ticket"""
+    supabase = get_supabase()
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+
+    # Verificar que el ticket existe
+    existing = supabase.table("tickets").select("*").eq("id", ticket_id).execute()
+    if not existing.data or len(existing.data) == 0:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    # Eliminar
+    supabase.table("tickets").delete().eq("id", ticket_id).execute()
+
+    return {"message": "Ticket eliminado exitosamente", "ticket_id": ticket_id}
