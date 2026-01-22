@@ -50,6 +50,7 @@ export default function App() {
   const [editDescription, setEditDescription] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ ticketId: string; description: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [showTour, setShowTour] = useState(false);
@@ -250,17 +251,22 @@ export default function App() {
     }
   };
 
-  const handleDelete = async (ticketId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este ticket?')) return;
+  const handleDeleteClick = (ticketId: string, description: string) => {
+    setConfirmDelete({ ticketId, description });
+  };
 
-    setIsDeleting(ticketId);
+  const handleDeleteConfirm = async () => {
+    if (!confirmDelete) return;
+
+    setIsDeleting(confirmDelete.ticketId);
     try {
-      const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
+      const response = await fetch(`${API_URL}/tickets/${confirmDelete.ticketId}`, {
         method: 'DELETE',
       });
       if (response.ok) {
         addNotification('success', 'Ticket eliminado exitosamente');
         setSelectedTicket(null);
+        setConfirmDelete(null);
       } else {
         addNotification('error', 'Error al eliminar el ticket');
       }
@@ -402,11 +408,6 @@ export default function App() {
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="text-sm text-gray-500 dark:text-gray-400 font-mono">#{ticket.id.slice(-8)}</div>
-                      <div className="flex gap-1 opacity-100 group-hover:opacity-0 transition-opacity duration-200">
-                        {ticket.sentiment === 'positivo' && <CheckCircle className="w-4 h-4 text-green-500" />}
-                        {ticket.sentiment === 'negativo' && <XCircle className="w-4 h-4 text-red-500" />}
-                        {ticket.processed ? <CheckCircle className="w-4 h-4 text-blue-500" /> : <AlertCircle className="w-4 h-4 text-yellow-500" />}
-                      </div>
                     </div>
                     <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2 line-clamp-2">{ticket.description}</h3>
                     <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
@@ -426,7 +427,7 @@ export default function App() {
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(ticket.id)}
+                        onClick={() => handleDeleteClick(ticket.id, ticket.description)}
                         disabled={isDeleting === ticket.id}
                         className="p-2 rounded-md bg-red-500/30 hover:bg-red-500/50 text-red-400 hover:text-red-200 transition-all shadow-md hover:shadow-lg border border-red-500/30 hover:border-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Eliminar ticket"
@@ -496,7 +497,7 @@ export default function App() {
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(selectedTicket.id)}
+                      onClick={() => handleDeleteClick(selectedTicket.id, selectedTicket.description)}
                       disabled={isDeleting === selectedTicket.id}
                       className="p-2 rounded-md bg-red-500/30 hover:bg-red-500/50 text-red-400 hover:text-red-200 transition-all shadow-md hover:shadow-lg border border-red-500/30 hover:border-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Eliminar ticket"
@@ -581,6 +582,72 @@ export default function App() {
                       setEditDescription('');
                     }}
                     disabled={isUpdating}
+                    className="px-4 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Modal de confirmación para eliminar */}
+        <AnimatePresence>
+          {confirmDelete && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+              onClick={() => setConfirmDelete(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 rounded-full bg-red-500/20">
+                    <Trash2 className="w-6 h-6 text-red-500" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Confirmar eliminación</h3>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 mb-2">
+                  ¿Estás seguro de que quieres eliminar este ticket?
+                </p>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Descripción:</p>
+                  <p className="text-sm text-gray-900 dark:text-gray-100 line-clamp-2">
+                    {confirmDelete.description}
+                  </p>
+                </div>
+                <p className="text-sm text-red-600 dark:text-red-400 mb-4">
+                  Esta acción no se puede deshacer.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDeleteConfirm}
+                    disabled={isDeleting === confirmDelete.ticketId}
+                    className="btn-primary flex-1 disabled:opacity-50 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700"
+                  >
+                    {isDeleting === confirmDelete.ticketId ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Eliminando...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-4 h-4" />
+                        Eliminar
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(null)}
+                    disabled={isDeleting === confirmDelete.ticketId}
                     className="px-4 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
                   >
                     Cancelar
