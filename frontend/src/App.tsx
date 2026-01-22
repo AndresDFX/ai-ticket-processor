@@ -35,6 +35,7 @@ type Notification = {
 type TourStep = {
   title: string;
   description: string;
+  targetKey: 'header' | 'form' | 'search';
 };
 
 export default function App() {
@@ -49,21 +50,28 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showTour, setShowTour] = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(0);
+  const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
   const itemsPerPage = 9; // 3x3 grid
   const currentPageRef = useRef(currentPage);
+  const headerRef = useRef<HTMLElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const tourSteps: TourStep[] = [
     {
       title: 'Bienvenido',
       description: 'Este dashboard muestra los tickets en tiempo real.',
+      targetKey: 'header',
     },
     {
       title: 'Crear tickets',
       description: 'Usa el formulario para crear un nuevo ticket de soporte.',
+      targetKey: 'form',
     },
     {
       title: 'Buscar y navegar',
       description: 'Filtra por descripción o categoría y usa la paginación.',
+      targetKey: 'search',
     },
   ];
 
@@ -100,9 +108,28 @@ export default function App() {
     if (typeof window === 'undefined') return;
     const seen = window.localStorage.getItem('supportCopilotTourSeen');
     if (!seen) {
-      setShowTour(true);
+      setTimeout(() => setShowTour(true), 400);
     }
   }, []);
+
+  useEffect(() => {
+    if (!showTour) {
+      setHighlightedElement(null);
+      return;
+    }
+
+    const step = tourSteps[tourStepIndex];
+    const targetMap: Record<TourStep['targetKey'], HTMLElement | null> = {
+      header: headerRef.current,
+      form: formRef.current,
+      search: searchRef.current,
+    };
+    const element = targetMap[step?.targetKey] || null;
+    setHighlightedElement(element);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [showTour, tourStepIndex, tourSteps]);
 
   useEffect(() => {
     const fetchTickets = async () => {
@@ -200,9 +227,12 @@ export default function App() {
     <div className="min-h-screen p-6 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
       <main className="container mx-auto max-w-4xl">
         <motion.header
+          ref={headerRef}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 flex items-center justify-between p-6 bg-gradient-to-r from-primary-500 to-primary-600 dark:from-primary-600 dark:to-primary-700 rounded-xl shadow-lg"
+          className={`mb-6 flex items-center justify-between p-6 bg-gradient-to-r from-primary-500 to-primary-600 dark:from-primary-600 dark:to-primary-700 rounded-xl shadow-lg ${
+            highlightedElement === headerRef.current ? 'ring-4 ring-yellow-400 ring-offset-4 ring-offset-slate-900 relative z-50' : ''
+          }`}
         >
           <div className="flex items-center gap-3">
             <img src="/logo.svg" alt="AI Support Co-Pilot Logo" className="h-12 w-12" />
@@ -226,7 +256,14 @@ export default function App() {
           className="mb-6 card"
         >
           <h2 className="mb-3 font-semibold">Gestion de tickets</h2>
-          <form onSubmit={handleSubmit} className="flex gap-2" aria-label="Crear ticket">
+          <form
+            ref={formRef}
+            onSubmit={handleSubmit}
+            className={`flex gap-2 ${
+              highlightedElement === formRef.current ? 'ring-4 ring-yellow-400 ring-offset-4 ring-offset-slate-900 relative z-50' : ''
+            }`}
+            aria-label="Crear ticket"
+          >
             <input
               type="text"
               aria-label="Descripción del ticket"
@@ -260,6 +297,7 @@ export default function App() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <input
+                  ref={searchRef}
                   type="text"
                   placeholder="Buscar tickets..."
                   value={searchTerm}
@@ -267,7 +305,9 @@ export default function App() {
                     setSearchTerm(e.target.value);
                     setCurrentPage(1); // Reset to first page on search
                   }}
-                  className="pl-10 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus-visible:ring-2 focus-visible:ring-primary-400"
+                  className={`pl-10 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus-visible:ring-2 focus-visible:ring-primary-400 ${
+                    highlightedElement === searchRef.current ? 'ring-4 ring-yellow-400 ring-offset-4 ring-offset-slate-900 relative z-50' : ''
+                  }`}
                 />
               </div>
               {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
@@ -386,63 +426,87 @@ export default function App() {
           </AnimatePresence>
         </div>
 
-        {/* Tour de bienvenida */}
+        {/* Tour de bienvenida con spotlight */}
         <AnimatePresence>
           {showTour && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-950/70 flex items-center justify-center p-4 z-50"
-            >
+            <>
               <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-800"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">
-                    {tourSteps[tourStepIndex]?.title}
-                  </h3>
-                  <button
-                    onClick={finishTour}
-                    className="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                  >
-                    Saltar
-                  </button>
-                </div>
-                <p className="text-slate-600 dark:text-slate-300">
-                  {tourSteps[tourStepIndex]?.description}
-                </p>
-                <div className="flex items-center justify-between mt-6">
-                  <span className="text-xs text-slate-400">
-                    Paso {tourStepIndex + 1} de {tourSteps.length}
-                  </span>
-                  <div className="flex gap-2">
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/60 z-40"
+                style={{
+                  clipPath: highlightedElement
+                    ? `polygon(
+                        0% 0%,
+                        0% 100%,
+                        ${highlightedElement.getBoundingClientRect().left}px 100%,
+                        ${highlightedElement.getBoundingClientRect().left}px ${highlightedElement.getBoundingClientRect().top}px,
+                        ${highlightedElement.getBoundingClientRect().right}px ${highlightedElement.getBoundingClientRect().top}px,
+                        ${highlightedElement.getBoundingClientRect().right}px ${highlightedElement.getBoundingClientRect().bottom}px,
+                        ${highlightedElement.getBoundingClientRect().left}px ${highlightedElement.getBoundingClientRect().bottom}px,
+                        ${highlightedElement.getBoundingClientRect().left}px 100%,
+                        100% 100%,
+                        100% 0%
+                      )`
+                    : undefined,
+                }}
+              />
+              {highlightedElement && (
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 16 }}
+                  className="fixed z-50 bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-800"
+                  style={{
+                    top: Math.min(
+                      highlightedElement.getBoundingClientRect().bottom + 16,
+                      window.innerHeight - 220
+                    ),
+                    left: Math.max(16, highlightedElement.getBoundingClientRect().left),
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold">{tourSteps[tourStepIndex]?.title}</h3>
                     <button
-                      onClick={() => setTourStepIndex((prev) => Math.max(prev - 1, 0))}
-                      disabled={tourStepIndex === 0}
-                      className="px-3 py-1 text-sm rounded border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-50"
+                      onClick={finishTour}
+                      className="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                     >
-                      Atrás
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (tourStepIndex >= tourSteps.length - 1) {
-                          finishTour();
-                        } else {
-                          setTourStepIndex((prev) => Math.min(prev + 1, tourSteps.length - 1));
-                        }
-                      }}
-                      className="btn-primary px-4 py-1 text-sm"
-                    >
-                      {tourStepIndex >= tourSteps.length - 1 ? 'Finalizar' : 'Siguiente'}
+                      Saltar
                     </button>
                   </div>
-                </div>
-              </motion.div>
-            </motion.div>
+                  <p className="text-slate-600 dark:text-slate-300">
+                    {tourSteps[tourStepIndex]?.description}
+                  </p>
+                  <div className="flex items-center justify-between mt-5">
+                    <span className="text-xs text-slate-400">
+                      Paso {tourStepIndex + 1} de {tourSteps.length}
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setTourStepIndex((prev) => Math.max(prev - 1, 0))}
+                        disabled={tourStepIndex === 0}
+                        className="px-3 py-1 text-sm rounded border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-50"
+                      >
+                        Atrás
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (tourStepIndex >= tourSteps.length - 1) {
+                            finishTour();
+                          } else {
+                            setTourStepIndex((prev) => Math.min(prev + 1, tourSteps.length - 1));
+                          }
+                        }}
+                        className="btn-primary px-4 py-1 text-sm"
+                      >
+                        {tourStepIndex >= tourSteps.length - 1 ? 'Finalizar' : 'Siguiente'}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </>
           )}
         </AnimatePresence>
       </main>
