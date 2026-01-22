@@ -14,27 +14,27 @@ from supabase import create_client, Client
 from langchain_community.llms import HuggingFaceHub
 
 class HuggingFaceAPI:
-    """Wrapper para la nueva API de Hugging Face"""
+    """Wrapper para Hugging Face Router Chat Completions"""
     def __init__(self, model: str, token: str):
         self.model = model
         self.token = token
-        self.api_url = f"https://router.huggingface.co/models/{model}"
+        self.api_url = "https://router.huggingface.co/v1/chat/completions"
         self.headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
-    
+
     def invoke(self, prompt: str) -> str:
         """Invoca el modelo y retorna la respuesta"""
         payload = {
-            "inputs": prompt,
-            "parameters": {
-                "temperature": 0.1,
-                "max_new_tokens": 200,
-                "return_full_text": False
-            }
+            "model": self.model,
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.1,
+            "max_tokens": 200
         }
-        
+
         response = requests.post(
             self.api_url,
             json=payload,
@@ -42,29 +42,16 @@ class HuggingFaceAPI:
             timeout=30
         )
         response.raise_for_status()
-        
+
         result = response.json()
-        
-        if isinstance(result, list) and len(result) > 0:
-            item = result[0]
-            if isinstance(item, dict):
-                if "generated_text" in item:
-                    return item["generated_text"]
-                elif "text" in item:
-                    return item["text"]
-            elif isinstance(item, str):
-                return item
-        elif isinstance(result, dict):
-            if "generated_text" in result:
-                return result["generated_text"]
-            elif "text" in result:
-                return result["text"]
-            elif "output" in result:
-                return result["output"]
-        elif isinstance(result, str):
-            return result
-        
-        logger.warning(f"LLM: Unexpected response format: {type(result)}")
+        if isinstance(result, dict):
+            choices = result.get("choices", [])
+            if choices and isinstance(choices[0], dict):
+                message = choices[0].get("message", {})
+                if isinstance(message, dict) and "content" in message:
+                    return message["content"]
+
+        logger.warning(f"LLM: Unexpected response format: {result}")
         return str(result)
 
 logging.basicConfig(
