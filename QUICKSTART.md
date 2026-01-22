@@ -36,13 +36,30 @@ cp python-api/.env.example python-api/.env
 # Edita python-api/.env con tus credenciales
 ```
 
-**Nota sobre el LLM (Ministral 3 3B Instruct 2512):**
-- El modelo `mistralai/Ministral-3-3B-Instruct-2512` **no está desplegado** en el Hugging Face Router por defecto.
-- Para usarlo debes **auto-hostearlo** con vLLM y apuntar la API al endpoint local:
-  - `LLM_API_BASE_URL=http://localhost:8000/v1/chat/completions`
-  - `HF_MODEL=mistralai/Ministral-3-3B-Instruct-2512`
-  - `LLM_API_TOKEN` es opcional si tu endpoint no requiere token.
-- Si quieres usar el Router, selecciona un modelo disponible en Router (ej: `mistralai/Mistral-7B-Instruct-v0.3`).
+**Nota sobre el LLM:**
+- **Modelo por defecto**: `meta-llama/Llama-3.1-8B-Instruct` (chat-compatible, funciona en Router)
+- **Configuración mínima** en `python-api/.env`:
+  ```
+  LLM_API_BASE_URL=https://router.huggingface.co/v1/chat/completions
+  HF_API_TOKEN=tu-token-de-hf
+  HF_MODEL=meta-llama/Llama-3.1-8B-Instruct
+  ```
+- **Modelos alternativos chat-compatibles** (si el por defecto no está disponible):
+  - `google/gemma-2-9b-it`
+  - `microsoft/Phi-3-mini-4k-instruct`
+  - `Qwen/Qwen2.5-7B-Instruct`
+- **Opción avanzada**: Si quieres usar `mistralai/Ministral-3-3B-Instruct-2512`, necesitas vLLM local:
+  ```bash
+  pip install vllm
+  vllm serve mistralai/Ministral-3-3B-Instruct-2512 \
+    --tokenizer-mode mistral --config-format mistral --load-format mistral \
+    --enable-auto-tool-choice --tool-call-parser mistral
+  ```
+  Luego en `python-api/.env`:
+  ```
+  LLM_API_BASE_URL=http://localhost:8000/v1/chat/completions
+  HF_MODEL=mistralai/Ministral-3-3B-Instruct-2512
+  ```
 
 **Frontend (`frontend/.env`):**
 ```bash

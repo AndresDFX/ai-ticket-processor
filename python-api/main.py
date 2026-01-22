@@ -58,9 +58,6 @@ class OpenAICompatibleAPI:
         """Invoca el modelo y retorna la respuesta."""
         is_chat_endpoint = self.api_url.rstrip("/").endswith("/v1/chat/completions")
         payload = self._build_chat_payload(prompt) if is_chat_endpoint else self._build_completion_payload(prompt)
-        
-        # Ministral-3 soporta JSON nativo, pero Hugging Face Router puede no soportar response_format
-        # El prompt ya está optimizado para JSON, así que no es necesario
 
         response = requests.post(
             self.api_url,
@@ -68,23 +65,25 @@ class OpenAICompatibleAPI:
             headers=self.headers,
             timeout=30
         )
-        if response.status_code == 400 and is_chat_endpoint:
+        
+        if response.status_code == 400:
             try:
                 error_body = response.json()
                 error_info = error_body.get("error", {})
                 error_code = error_info.get("code")
                 error_message = str(error_info.get("message", "")).lower()
                 if error_code == "model_not_supported" and "not a chat model" in error_message:
-                    fallback_url = self.api_url.replace("/v1/chat/completions", "/v1/completions")
-                    logger.warning("LLM: Model is not chat-compatible, retrying via completions endpoint")
-                    response = requests.post(
-                        fallback_url,
-                        json=self._build_completion_payload(prompt),
-                        headers=self.headers,
-                        timeout=30
+                    raise ValueError(
+                        f"Model '{self.model}' is not chat-compatible with Hugging Face Router. "
+                        f"Use a chat-compatible model or host locally with vLLM. "
+                        f"See QUICKSTART.md for vLLM setup instructions."
                     )
-            except ValueError:
+            except ValueError as e:
+                if "not a chat model" in str(e).lower():
+                    raise
+            except (KeyError, AttributeError):
                 pass
+        
         if response.status_code >= 400:
             logger.error(
                 "LLM: HTTP %s from %s - %s",
@@ -141,7 +140,7 @@ def get_supabase() -> Optional[Client]:
 
 def llm_client() -> Optional[OpenAICompatibleAPI]:
     token = os.getenv("HF_API_TOKEN") or os.getenv("LLM_API_TOKEN")
-    model = os.getenv("HF_MODEL", "mistralai/Ministral-3-3B-Instruct-2512")
+    model = os.getenv("HF_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
     base_url = os.getenv("LLM_API_BASE_URL", "https://router.huggingface.co/v1/chat/completions")
     requires_token = "huggingface.co" in urlparse(base_url).netloc
     if requires_token and not token:
@@ -338,6 +337,13 @@ def parse_json_from_text(text: str) -> dict:
     if not text:
         raise ValueError("Empty response")
     
+    # Primero intentar parsear el texto completo (caso más común: JSON limpio)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    
+    # Si no es JSON puro, buscar JSON dentro del texto
     json_match = re.search(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", text, re.DOTALL)
     if json_match:
         try:
@@ -345,6 +351,7 @@ def parse_json_from_text(text: str) -> dict:
         except json.JSONDecodeError:
             pass
     
+    # Buscar JSON en bloques de código markdown
     json_match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
     if json_match:
         try:
@@ -509,7 +516,7 @@ def diagnostics():
     return {
         "llm": llm_status,
         "config": {
-            "hf_model": os.getenv("HF_MODEL", "mistralai/Ministral-3-3B-Instruct-2512"),
+            "hf_model": os.getenv("HF_MODEL", "meta-llama/Llama-3.1-8B-Instruct"),
             "llm_base_url": os.getenv("LLM_API_BASE_URL", "https://router.huggingface.co/v1/chat/completions"),
             "hf_token_configured": bool(os.getenv("HF_API_TOKEN") or os.getenv("LLM_API_TOKEN")),
             "confidence_threshold": float(os.getenv("LLM_CONFIDENCE_THRESHOLD", "0.5")),

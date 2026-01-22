@@ -78,16 +78,18 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
 - Umbral de confianza configurable para LLM (`LLM_CONFIDENCE_THRESHOLD`).
 - Fallback automático a reglas cuando el modelo es ambiguo.
 - Categorías ampliadas para tickets: Acceso, Cuenta, Facturación, Comercial, Técnico, Rendimiento, UX/UI, Seguridad, Integraciones, Móvil y Solicitudes.
-- **Modelo LLM por defecto**: `mistralai/Ministral-3-3B-Instruct-2512` (optimizado para edge, 4B parámetros, FP8)
+- **Modelo LLM por defecto**: `meta-llama/Llama-3.1-8B-Instruct` (chat-compatible, funciona en Hugging Face Router)
   - Soporte nativo para JSON outputting
   - Temperatura recomendada: 0.1 (ya configurada)
   - Ideal para clasificación de tickets en tiempo real
-- **Importante**: Este modelo no está desplegado en Hugging Face Router por defecto. Para usarlo:
+  - **Probado y funcionando** en Router con respuestas JSON limpias
+- **Modelos alternativos chat-compatibles** (si el por defecto no está disponible):
+  - `google/gemma-2-9b-it`
+  - `microsoft/Phi-3-mini-4k-instruct`
+  - `Qwen/Qwen2.5-7B-Instruct`
+- **Opción avanzada**: Si quieres usar `mistralai/Ministral-3-3B-Instruct-2512`:
   - **Auto-host** con vLLM y configura `LLM_API_BASE_URL=http://localhost:8000/v1/chat/completions`
-  - O cambia el modelo a uno disponible en Router (ej: `mistralai/Mistral-7B-Instruct-v0.3`)
-- **Modelos alternativos recomendados**:
-  - `mistralai/Ministral-3-8B-Instruct-2512` (mayor capacidad, 9B parámetros)
-  - `mistralai/Mistral-7B-Instruct-v0.3` (modelo anterior, compatible)
+  - Ver `QUICKSTART.md` para instrucciones detalladas de vLLM
 
 ## 🔔 Notificaciones Automáticas (n8n)
 

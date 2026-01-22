@@ -4,20 +4,18 @@
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 HF_API_TOKEN=your-hf-api-token
-HF_MODEL=mistralai/Ministral-3-3B-Instruct-2512
-# Para Hugging Face Router (por defecto):
-LLM_API_BASE_URL=https://router.huggingface.co/v1/chat/completions
-# Si el modelo no es "chat", se puede usar completions:
-# LLM_API_BASE_URL=https://router.huggingface.co/v1/completions
-# Para vLLM local (sin token):
+HF_MODEL=meta-llama/Llama-3.1-8B-Instruct
+# Modelo por defecto: meta-llama/Llama-3.1-8B-Instruct (chat-compatible, funciona en Router)
+# Modelos alternativos chat-compatibles en Router:
+# - google/gemma-2-9b-it
+# - microsoft/Phi-3-mini-4k-instruct
+# - Qwen/Qwen2.5-7B-Instruct
+# Para usar Ministral-3-3B-Instruct-2512 (requiere vLLM local):
 # LLM_API_BASE_URL=http://localhost:8000/v1/chat/completions
-# LLM_API_TOKEN=optional-if-your-endpoint-requires-it
+# HF_MODEL=mistralai/Ministral-3-3B-Instruct-2512
+LLM_API_BASE_URL=https://router.huggingface.co/v1/chat/completions
 LLM_TEMPERATURE=0.1
 LLM_MAX_TOKENS=200
-# Modelo por defecto: Ministral-3-3B-Instruct-2512 (optimizado para edge, 4B parámetros, FP8)
-# Modelos alternativos disponibles en Hugging Face Router:
-# - mistralai/Ministral-3-8B-Instruct-2512 (mayor capacidad, 9B parámetros)
-# - mistralai/Mistral-7B-Instruct-v0.3 (modelo anterior, compatible)
 PORT=8001
 N8N_WEBHOOK_URL=https://tu-workspace.n8n.cloud/webhook/support-copilot-webhook
 LLM_CONFIDENCE_THRESHOLD=0.6
