@@ -11,28 +11,27 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
-from langchain_community.llms import HuggingFaceHub
+from urllib.parse import urlparse
 
-class HuggingFaceAPI:
-    """Wrapper para Hugging Face Router Chat Completions"""
-    def __init__(self, model: str, token: str):
+class OpenAICompatibleAPI:
+    """Wrapper para endpoints OpenAI-compatible (HF Router o vLLM)."""
+    def __init__(self, model: str, base_url: str, token: Optional[str] = None):
         self.model = model
         self.token = token
-        self.api_url = "https://router.huggingface.co/v1/chat/completions"
-        self.headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        }
+        self.api_url = base_url
+        self.headers = {"Content-Type": "application/json"}
+        if token:
+            self.headers["Authorization"] = f"Bearer {token}"
 
     def invoke(self, prompt: str) -> str:
-        """Invoca el modelo y retorna la respuesta"""
+        """Invoca el modelo y retorna la respuesta."""
         payload = {
             "model": self.model,
             "messages": [
                 {"role": "user", "content": prompt}
             ],
-            "temperature": 0.1,
-            "max_tokens": 200
+            "temperature": float(os.getenv("LLM_TEMPERATURE", "0.1")),
+            "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "200"))
         }
         
         # Ministral-3 soporta JSON nativo, pero Hugging Face Router puede no soportar response_format
@@ -44,6 +43,13 @@ class HuggingFaceAPI:
             headers=self.headers,
             timeout=30
         )
+        if response.status_code >= 400:
+            logger.error(
+                "LLM: HTTP %s from %s - %s",
+                response.status_code,
+                self.api_url,
+                response.text[:500],
+            )
         response.raise_for_status()
 
         result = response.json()
@@ -94,15 +100,17 @@ def get_supabase() -> Optional[Client]:
     return create_client(url, key)
 
 
-def llm_client() -> Optional[HuggingFaceAPI]:
-    token = os.getenv("HF_API_TOKEN")
+def llm_client() -> Optional[OpenAICompatibleAPI]:
+    token = os.getenv("HF_API_TOKEN") or os.getenv("LLM_API_TOKEN")
     model = os.getenv("HF_MODEL", "mistralai/Ministral-3-3B-Instruct-2512")
-    if not token:
-        logger.warning("LLM: HF_API_TOKEN not configured, using rules fallback")
+    base_url = os.getenv("LLM_API_BASE_URL", "https://router.huggingface.co/v1/chat/completions")
+    requires_token = "huggingface.co" in urlparse(base_url).netloc
+    if requires_token and not token:
+        logger.warning("LLM: Token not configured for Hugging Face Router, using rules fallback")
         return None
     try:
-        client = HuggingFaceAPI(model=model, token=token)
-        logger.info(f"LLM: Client initialized successfully with model {model}")
+        client = OpenAICompatibleAPI(model=model, base_url=base_url, token=token)
+        logger.info(f"LLM: Client initialized successfully with model {model} at {base_url}")
         return client
     except Exception as e:
         logger.error(f"LLM: Error creating client - {type(e).__name__}: {e}")
@@ -463,7 +471,8 @@ def diagnostics():
         "llm": llm_status,
         "config": {
             "hf_model": os.getenv("HF_MODEL", "mistralai/Ministral-3-3B-Instruct-2512"),
-            "hf_token_configured": bool(os.getenv("HF_API_TOKEN")),
+            "llm_base_url": os.getenv("LLM_API_BASE_URL", "https://router.huggingface.co/v1/chat/completions"),
+            "hf_token_configured": bool(os.getenv("HF_API_TOKEN") or os.getenv("LLM_API_TOKEN")),
             "confidence_threshold": float(os.getenv("LLM_CONFIDENCE_THRESHOLD", "0.5")),
             "n8n_webhook_configured": bool(os.getenv("N8N_WEBHOOK_URL")),
             "supabase_configured": bool(os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_ROLE_KEY")),

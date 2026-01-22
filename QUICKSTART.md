@@ -36,6 +36,14 @@ cp python-api/.env.example python-api/.env
 # Edita python-api/.env con tus credenciales
 ```
 
+**Nota sobre el LLM (Ministral 3 3B Instruct 2512):**
+- El modelo `mistralai/Ministral-3-3B-Instruct-2512` **no está desplegado** en el Hugging Face Router por defecto.
+- Para usarlo debes **auto-hostearlo** con vLLM y apuntar la API al endpoint local:
+  - `LLM_API_BASE_URL=http://localhost:8000/v1/chat/completions`
+  - `HF_MODEL=mistralai/Ministral-3-3B-Instruct-2512`
+  - `LLM_API_TOKEN` es opcional si tu endpoint no requiere token.
+- Si quieres usar el Router, selecciona un modelo disponible en Router (ej: `mistralai/Mistral-7B-Instruct-v0.3`).
+
 **Frontend (`frontend/.env`):**
 ```bash
 cp frontend/.env.example frontend/.env

@@ -5,6 +5,13 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 HF_API_TOKEN=your-hf-api-token
 HF_MODEL=mistralai/Ministral-3-3B-Instruct-2512
+# Para Hugging Face Router (por defecto):
+LLM_API_BASE_URL=https://router.huggingface.co/v1/chat/completions
+# Para vLLM local (sin token):
+# LLM_API_BASE_URL=http://localhost:8000/v1/chat/completions
+# LLM_API_TOKEN=optional-if-your-endpoint-requires-it
+LLM_TEMPERATURE=0.1
+LLM_MAX_TOKENS=200
 # Modelo por defecto: Ministral-3-3B-Instruct-2512 (optimizado para edge, 4B parámetros, FP8)
 # Modelos alternativos disponibles en Hugging Face Router:
 # - mistralai/Ministral-3-8B-Instruct-2512 (mayor capacidad, 9B parámetros)
