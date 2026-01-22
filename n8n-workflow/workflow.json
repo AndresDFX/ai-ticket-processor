@@ -66,8 +66,11 @@
     },
     "If Sentiment Negative": {
       "main": [
-        [{"node": "Send Email", "type": "main", "index": 0}],
-        [{"node": "Send Telegram", "type": "main", "index": 0}]
+        [
+          {"node": "Send Email", "type": "main", "index": 0},
+          {"node": "Send Telegram", "type": "main", "index": 0}
+        ],
+        []
       ]
     }
   },
