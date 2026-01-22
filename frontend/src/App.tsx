@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Eye, CheckCircle, XCircle, AlertCircle, Loader2, Search, Edit, Trash2 } from 'lucide-react';
+import { Plus, Eye, CheckCircle, XCircle, AlertCircle, Loader2, Search, Edit, Trash2, X } from 'lucide-react';
 import ThemeToggle from './components/ThemeToggle';
 
 type Ticket = {
@@ -56,6 +56,7 @@ export default function App() {
   const [showTour, setShowTour] = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(0);
   const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const itemsPerPage = 9; // 3x3 grid
   const currentPageRef = useRef(currentPage);
   const headerRef = useRef<HTMLElement>(null);
@@ -108,6 +109,15 @@ export default function App() {
   useEffect(() => {
     currentPageRef.current = currentPage;
   }, [currentPage]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -687,58 +697,82 @@ export default function App() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 bg-black/60 z-40"
+                onClick={finishTour}
                 style={{
-                  clipPath: highlightedElement
-                    ? `polygon(
-                        0% 0%,
-                        0% 100%,
-                        ${highlightedElement.getBoundingClientRect().left}px 100%,
-                        ${highlightedElement.getBoundingClientRect().left}px ${highlightedElement.getBoundingClientRect().top}px,
-                        ${highlightedElement.getBoundingClientRect().right}px ${highlightedElement.getBoundingClientRect().top}px,
-                        ${highlightedElement.getBoundingClientRect().right}px ${highlightedElement.getBoundingClientRect().bottom}px,
-                        ${highlightedElement.getBoundingClientRect().left}px ${highlightedElement.getBoundingClientRect().bottom}px,
-                        ${highlightedElement.getBoundingClientRect().left}px 100%,
-                        100% 100%,
-                        100% 0%
-                      )`
+                  clipPath: highlightedElement && !isMobile
+                    ? (() => {
+                        const rect = highlightedElement.getBoundingClientRect();
+                        return `polygon(
+                          0% 0%,
+                          0% 100%,
+                          ${rect.left}px 100%,
+                          ${rect.left}px ${rect.top}px,
+                          ${rect.right}px ${rect.top}px,
+                          ${rect.right}px ${rect.bottom}px,
+                          ${rect.left}px ${rect.bottom}px,
+                          ${rect.left}px 100%,
+                          100% 100%,
+                          100% 0%
+                        )`;
+                      })()
                     : undefined,
                 }}
               />
               {highlightedElement && (
                 <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 16 }}
-                  className="fixed z-50 bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-800"
-                  style={{
-                    top: Math.min(
-                      highlightedElement.getBoundingClientRect().bottom + 16,
-                      window.innerHeight - 220
-                    ),
-                    left: Math.max(16, highlightedElement.getBoundingClientRect().left),
-                  }}
+                  initial={{ opacity: 0, y: 16, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 16, scale: 0.95 }}
+                  className={`fixed z-50 bg-white dark:bg-gray-900 rounded-2xl p-4 sm:p-6 max-w-md w-[calc(100%-32px)] sm:w-full shadow-2xl border border-slate-200 dark:border-slate-800 ${
+                    isMobile ? 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2' : ''
+                  }`}
+                  style={
+                    !isMobile && highlightedElement
+                      ? {
+                          top: Math.min(
+                            highlightedElement.getBoundingClientRect().bottom + 16,
+                            window.innerHeight - 280
+                          ),
+                          left: Math.max(
+                            16,
+                            Math.min(
+                              highlightedElement.getBoundingClientRect().left,
+                              window.innerWidth - 400
+                            )
+                          ),
+                        }
+                      : {
+                          maxHeight: '80vh',
+                          overflowY: 'auto',
+                        }
+                  }
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold">{tourSteps[tourStepIndex]?.title}</h3>
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-base sm:text-lg font-semibold pr-2 flex-1">
+                      {tourSteps[tourStepIndex]?.title}
+                    </h3>
                     <button
                       onClick={finishTour}
-                      className="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                      className="flex-shrink-0 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                      aria-label="Cerrar tour"
+                      title="Cerrar tour"
                     >
-                      Saltar
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
-                  <p className="text-slate-600 dark:text-slate-300">
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 mb-4">
                     {tourSteps[tourStepIndex]?.description}
                   </p>
-                  <div className="flex items-center justify-between mt-5">
-                    <span className="text-xs text-slate-400">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0 mt-4 sm:mt-5">
+                    <span className="text-xs text-slate-400 text-center sm:text-left order-2 sm:order-1">
                       Paso {tourStepIndex + 1} de {tourSteps.length}
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-center sm:justify-end order-1 sm:order-2">
                       <button
                         onClick={() => setTourStepIndex((prev) => Math.max(prev - 1, 0))}
                         disabled={tourStepIndex === 0}
-                        className="px-3 py-1 text-sm rounded border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-50"
+                        className="px-4 py-2 text-sm rounded border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors min-w-[90px]"
                       >
                         Atrás
                       </button>
@@ -750,12 +784,20 @@ export default function App() {
                             setTourStepIndex((prev) => Math.min(prev + 1, tourSteps.length - 1));
                           }
                         }}
-                        className="btn-primary px-4 py-1 text-sm"
+                        className="btn-primary px-4 py-2 text-sm min-w-[110px]"
                       >
                         {tourStepIndex >= tourSteps.length - 1 ? 'Finalizar' : 'Siguiente'}
                       </button>
                     </div>
                   </div>
+                  {isMobile && (
+                    <button
+                      onClick={finishTour}
+                      className="mt-3 w-full text-center text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 underline py-2"
+                    >
+                      Omitir tour completo
+                    </button>
+                  )}
                 </motion.div>
               )}
             </>
