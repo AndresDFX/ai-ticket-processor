@@ -11,14 +11,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
-from langchain_community.llms import HuggingFaceHub
-
 class HuggingFaceAPI:
     """Wrapper para la nueva API de Hugging Face"""
-    def __init__(self, model: str, token: str):
+    def __init__(self, model: str, token: str, provider: str = "hf-inference"):
         self.model = model
         self.token = token
-        self.api_url = f"https://router.huggingface.co/models/{model}"
+        self.provider = provider
+        self.api_url = f"https://router.huggingface.co/{provider}/models/{model}"
         self.headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
@@ -107,12 +106,13 @@ def get_supabase() -> Optional[Client]:
 def llm_client() -> Optional[HuggingFaceAPI]:
     token = os.getenv("HF_API_TOKEN")
     model = os.getenv("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.3")
+    provider = os.getenv("HF_INFERENCE_PROVIDER", "hf-inference")
     if not token:
         logger.warning("LLM: HF_API_TOKEN not configured, using rules fallback")
         return None
     try:
-        client = HuggingFaceAPI(model=model, token=token)
-        logger.info(f"LLM: Client initialized successfully with model {model}")
+        client = HuggingFaceAPI(model=model, token=token, provider=provider)
+        logger.info(f"LLM: Client initialized successfully with model {model} using provider {provider}")
         return client
     except Exception as e:
         logger.error(f"LLM: Error creating client - {type(e).__name__}: {e}")
@@ -475,6 +475,7 @@ def diagnostics():
         "llm": llm_status,
         "config": {
             "hf_model": os.getenv("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.3"),
+            "hf_inference_provider": os.getenv("HF_INFERENCE_PROVIDER", "hf-inference"),
             "hf_token_configured": bool(os.getenv("HF_API_TOKEN")),
             "confidence_threshold": float(os.getenv("LLM_CONFIDENCE_THRESHOLD", "0.5")),
             "n8n_webhook_configured": bool(os.getenv("N8N_WEBHOOK_URL")),
