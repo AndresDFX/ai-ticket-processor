@@ -189,12 +189,61 @@ La API llama automáticamente al webhook de n8n cuando detecta un ticket con sen
 3. Si el sentimiento es "Negativo", recibirás un email en el correo configurado
 4. Verifica en **"Executions"** de n8n que el workflow se ejecutó
 
-#### Paso 7: (Opcional) Telegram
-1. En n8n, crea dos variables de entorno:
-   - `TELEGRAM_BOT_TOKEN`
-   - `TELEGRAM_CHAT_ID`
-2. Guarda cambios y vuelve a ejecutar el workflow.
-3. **Esperado**: llega un mensaje de Telegram con el detalle del ticket.
+#### Paso 7: Configurar Telegram (Grupos/Canales)
+
+**Importante**: El workflow solo envía mensajes cuando el sentimiento es **"Negativo"**.
+
+##### 7.1: Crear el bot en Telegram
+1. Abre Telegram y busca **@BotFather**
+2. Envía `/newbot`
+3. Sigue las instrucciones y dale un nombre y username (debe terminar en `bot`)
+4. BotFather te dará un **token** → guárdalo (ejemplo: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
+
+##### 7.2: Obtener el Chat ID
+
+**Para un grupo o canal:**
+1. Agrega el bot al grupo/canal
+2. Envía un mensaje en el grupo/canal (puede ser cualquier cosa)
+3. Abre en el navegador:
+   ```
+   https://api.telegram.org/bot<TU_BOT_TOKEN>/getUpdates
+   ```
+   Reemplaza `<TU_BOT_TOKEN>` con el token que te dio BotFather
+4. En la respuesta JSON busca:
+   ```json
+   "chat": { "id": -1001234567890, ... }
+   ```
+   **Nota**: Para grupos/canales, el `chat_id` será un número **negativo** (ej: `-1001234567890`)
+
+**Para chat privado:**
+1. Inicia una conversación con tu bot (envíale `/start`)
+2. Envía un mensaje cualquiera
+3. Haz el mismo `getUpdates` de arriba
+4. El `chat_id` será un número positivo (ej: `123456789`)
+
+##### 7.3: Configurar credenciales en n8n
+1. En n8n, abre el nodo **"Send Telegram"**
+2. Click en **"Credential for Telegram"** → **"Create New Credential"**
+3. Configura:
+   - **Name**: `Telegram Bot`
+   - **Access Token**: Pega el token que te dio BotFather
+4. Guarda la credencial
+
+##### 7.4: Configurar Chat ID en el nodo
+1. En el nodo **"Send Telegram"**, en el campo **"Chat ID"**:
+   - Usa: `={{ $env.TELEGRAM_CHAT_ID }}`
+2. En n8n, ve a **Settings** → **Environment Variables**
+3. Agrega:
+   - **Key**: `TELEGRAM_CHAT_ID`
+   - **Value**: El chat_id que obtuviste (ej: `-1001234567890` para grupos)
+4. Guarda
+
+##### 7.5: Probar
+1. Activa el workflow
+2. Crea un ticket con sentimiento negativo desde el frontend
+3. **Esperado**: Llega un mensaje al grupo/canal de Telegram con el detalle del ticket
+
+**Nota**: Si el sentimiento es "Positivo" o "Neutral", **NO** se enviará mensaje a Telegram (solo se envía para "Negativo").
 
 ### Opción B: n8n en local con Docker (para desarrollo)
 

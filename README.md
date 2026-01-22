@@ -81,18 +81,25 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
 
 ## 🔔 Notificaciones Automáticas (n8n)
 
-El sistema está integrado con **n8n** para enviar notificaciones por email automáticamente:
+El sistema está integrado con **n8n** para enviar notificaciones por email y Telegram automáticamente:
 
-- **Cuándo se activa**: Cuando un ticket es procesado y tiene sentimiento **"Negativo"**
+- **Cuándo se activa**: Cuando un ticket es procesado y tiene sentimiento **"Negativo"** (solo negativo, no positivo ni neutral)
 - **Cómo funciona**: 
   1. El frontend crea un ticket (o se procesa vía API)
   2. La API clasifica el ticket con IA
   3. Si el sentimiento es "Negativo", la API llama automáticamente al webhook de n8n
-  4. n8n procesa el webhook (sin llamar a la API) y envía un email de alerta
-- **Configuración**: Agrega `N8N_WEBHOOK_URL` en las variables de entorno de la API (ver `python-api/ENV_EXAMPLE.md`)
-- Si no configuras `N8N_WEBHOOK_URL`, el sistema funciona pero no envía emails
+  4. n8n procesa el webhook y envía:
+     - **Email** de alerta (configurado con Gmail)
+     - **Telegram** (opcional, soporta grupos y canales)
+- **Configuración**: 
+  - Agrega `N8N_WEBHOOK_URL` en las variables de entorno de la API (ver `python-api/ENV_EXAMPLE.md`)
+  - Si no configuras `N8N_WEBHOOK_URL`, el sistema funciona pero no envía notificaciones
 - **Payload**: n8n recibe los datos en `body` (`body.description`, `body.category`, `body.sentiment`, `body.id`)
-- **Telegram**: el workflow incluye envío opcional por Telegram (configura `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en n8n).
+- **Telegram**: 
+  - El workflow usa el nodo nativo de Telegram (mejor para grupos/canales)
+  - Configura `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en n8n
+  - Para grupos/canales, el `chat_id` será negativo (ej: `-1001234567890`)
+  - Ver [QUICKSTART.md](./QUICKSTART.md) para instrucciones detalladas paso a paso
 
 ## 🐳 Docker Compose (Recomendado)
 
@@ -148,9 +155,14 @@ uvicorn main:app --host 0.0.0.0 --port 8001
 ### n8n
 1) Importa `n8n-workflow/workflow.json` en n8n Cloud.
 2) Configura el nodo **Email** con tus credenciales SMTP (Gmail recomendado).
-3) Activa el workflow y copia la **URL del webhook** (Production URL).
-4) Agrega `N8N_WEBHOOK_URL` en las variables de entorno de la API en Render.
-5) **Listo**: Ahora cuando crees un ticket con sentimiento negativo desde el frontend, recibirás un email automáticamente.
+3) (Opcional) Configura el nodo **Telegram** con tu bot token y chat_id (soporta grupos/canales).
+4) Activa el workflow y copia la **URL del webhook** (Production URL).
+5) Agrega `N8N_WEBHOOK_URL` en las variables de entorno de la API en Render.
+6) **Listo**: Ahora cuando crees un ticket con sentimiento negativo desde el frontend, recibirás:
+   - Un email automáticamente
+   - Un mensaje en Telegram (si está configurado)
+   
+**Nota**: Solo se envían notificaciones cuando el sentimiento es **"Negativo"**. Los tickets positivos o neutrales no activan el workflow.
 
 ## Variables de entorno
 - API: `python-api/ENV_EXAMPLE.md`
