@@ -402,7 +402,7 @@ export default function App() {
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="text-sm text-gray-500 dark:text-gray-400 font-mono">#{ticket.id.slice(-8)}</div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 opacity-100 group-hover:opacity-0 transition-opacity duration-200">
                         {ticket.sentiment === 'positivo' && <CheckCircle className="w-4 h-4 text-green-500" />}
                         {ticket.sentiment === 'negativo' && <XCircle className="w-4 h-4 text-red-500" />}
                         {ticket.processed ? <CheckCircle className="w-4 h-4 text-blue-500" /> : <AlertCircle className="w-4 h-4 text-yellow-500" />}
@@ -414,26 +414,28 @@ export default function App() {
                       <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
                     </div>
                     <div 
-                      className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 flex gap-1.5 z-10"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
                         onClick={() => handleEdit(ticket)}
-                        className="p-1.5 rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                        className="p-2 rounded-md bg-blue-500/30 hover:bg-blue-500/50 text-blue-400 hover:text-blue-200 transition-all shadow-md hover:shadow-lg border border-blue-500/30 hover:border-blue-500/50"
                         title="Editar ticket"
+                        aria-label="Editar ticket"
                       >
-                        <Edit className="w-3.5 h-3.5" />
+                        <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(ticket.id)}
                         disabled={isDeleting === ticket.id}
-                        className="p-1.5 rounded bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
+                        className="p-2 rounded-md bg-red-500/30 hover:bg-red-500/50 text-red-400 hover:text-red-200 transition-all shadow-md hover:shadow-lg border border-red-500/30 hover:border-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Eliminar ticket"
+                        aria-label="Eliminar ticket"
                       >
                         {isDeleting === ticket.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         )}
                       </button>
                     </div>
@@ -487,16 +489,18 @@ export default function App() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(selectedTicket)}
-                      className="p-2 rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                      className="p-2 rounded-md bg-blue-500/30 hover:bg-blue-500/50 text-blue-400 hover:text-blue-200 transition-all shadow-md hover:shadow-lg border border-blue-500/30 hover:border-blue-500/50"
                       title="Editar ticket"
+                      aria-label="Editar ticket"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(selectedTicket.id)}
                       disabled={isDeleting === selectedTicket.id}
-                      className="p-2 rounded bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
+                      className="p-2 rounded-md bg-red-500/30 hover:bg-red-500/50 text-red-400 hover:text-red-200 transition-all shadow-md hover:shadow-lg border border-red-500/30 hover:border-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Eliminar ticket"
+                      aria-label="Eliminar ticket"
                     >
                       {isDeleting === selectedTicket.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
