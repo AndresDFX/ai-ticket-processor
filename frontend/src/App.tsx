@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Eye, CheckCircle, XCircle, AlertCircle, Loader2, Search } from 'lucide-react';
@@ -32,6 +32,11 @@ type Notification = {
   message: string;
 };
 
+type TourStep = {
+  title: string;
+  description: string;
+};
+
 export default function App() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +47,25 @@ export default function App() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showTour, setShowTour] = useState(false);
+  const [tourStepIndex, setTourStepIndex] = useState(0);
   const itemsPerPage = 9; // 3x3 grid
+  const currentPageRef = useRef(currentPage);
+
+  const tourSteps: TourStep[] = [
+    {
+      title: 'Bienvenido',
+      description: 'Este dashboard muestra los tickets en tiempo real.',
+    },
+    {
+      title: 'Crear tickets',
+      description: 'Usa el formulario para crear un nuevo ticket de soporte.',
+    },
+    {
+      title: 'Buscar y navegar',
+      description: 'Filtra por descripción o categoría y usa la paginación.',
+    },
+  ];
 
   const addNotification = (type: Notification['type'], message: string) => {
     const id = Date.now().toString();
@@ -51,6 +74,35 @@ export default function App() {
       setNotifications(prev => prev.filter(n => n.id !== id));
     }, 5000);
   };
+
+  const jumpToFirstPage = () => {
+    if (currentPageRef.current > 1) {
+      setCurrentPage(1);
+    }
+    if (typeof window !== 'undefined' && window.scrollY > 0) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const finishTour = () => {
+    setShowTour(false);
+    setTourStepIndex(0);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('supportCopilotTourSeen', 'true');
+    }
+  };
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const seen = window.localStorage.getItem('supportCopilotTourSeen');
+    if (!seen) {
+      setShowTour(true);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchTickets = async () => {
@@ -86,6 +138,7 @@ export default function App() {
           if (payload.eventType === 'INSERT' && payload.new) {
             upsertTicket(payload.new as Ticket);
             addNotification('success', 'Nuevo ticket recibido');
+            jumpToFirstPage();
             return;
           }
           if (payload.eventType === 'UPDATE' && payload.new) {
@@ -122,6 +175,7 @@ export default function App() {
       if (response.ok) {
         setNewTicket('');
         addNotification('success', 'Ticket creado exitosamente');
+        jumpToFirstPage();
       } else {
         addNotification('error', 'Error al crear el ticket');
       }
@@ -331,6 +385,66 @@ export default function App() {
             ))}
           </AnimatePresence>
         </div>
+
+        {/* Tour de bienvenida */}
+        <AnimatePresence>
+          {showTour && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-slate-950/70 flex items-center justify-center p-4 z-50"
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-800"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">
+                    {tourSteps[tourStepIndex]?.title}
+                  </h3>
+                  <button
+                    onClick={finishTour}
+                    className="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                  >
+                    Saltar
+                  </button>
+                </div>
+                <p className="text-slate-600 dark:text-slate-300">
+                  {tourSteps[tourStepIndex]?.description}
+                </p>
+                <div className="flex items-center justify-between mt-6">
+                  <span className="text-xs text-slate-400">
+                    Paso {tourStepIndex + 1} de {tourSteps.length}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setTourStepIndex((prev) => Math.max(prev - 1, 0))}
+                      disabled={tourStepIndex === 0}
+                      className="px-3 py-1 text-sm rounded border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-50"
+                    >
+                      Atrás
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (tourStepIndex >= tourSteps.length - 1) {
+                          finishTour();
+                        } else {
+                          setTourStepIndex((prev) => Math.min(prev + 1, tourSteps.length - 1));
+                        }
+                      }}
+                      className="btn-primary px-4 py-1 text-sm"
+                    >
+                      {tourStepIndex >= tourSteps.length - 1 ? 'Finalizar' : 'Siguiente'}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );
