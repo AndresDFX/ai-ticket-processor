@@ -47,9 +47,9 @@ Sistema de procesamiento automático de tickets de soporte con IA, dashboard en 
 - `setup-env.sh`: script para crear archivos .env
 
 ## 📝 URLs de entrega
-- **Dashboard (Frontend)**: https://ai-ticket-processor.vercel.app/
-- **API Python (Backend)**: https://ai-ticket-processor.onrender.com/docs
-- **Canal de Telegram**: https://t.me/ai_ticket_processor
+- **Dashboard (Frontend)**: https://tu-app.vercel.app/
+- **API Python (Backend)**: https://tu-api.onrender.com/docs
+- **Canal de Telegram**: https://t.me/tu_canal (configurar según tu canal)
 
 ⚠️ **Nota sobre Render**: El backend está desplegado en el plan gratuito de Render. La primera petición después de un período de inactividad puede tardar entre 30-60 segundos mientras el servicio se "despierta". Las peticiones subsiguientes son inmediatas.
 
@@ -123,7 +123,7 @@ El sistema está integrado con **n8n** para enviar notificaciones por email y Te
   - El workflow usa el nodo nativo de Telegram (mejor para grupos/canales)
   - Configura `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en n8n
   - Para grupos/canales, el `chat_id` será negativo (ej: `-1001234567890`)
-  - **Canal público**: Los mensajes se envían al canal público [@ai_ticket_processor](https://t.me/ai_ticket_processor)
+  - **Canal público**: Los mensajes se envían al canal público configurado en `TELEGRAM_CHAT_ID`
   - Ver [QUICKSTART.md](./QUICKSTART.md) para instrucciones detalladas paso a paso
 
 ## 🐳 Docker Compose (Recomendado)
@@ -168,7 +168,7 @@ chmod +x seed-api.sh
    - Conecta tu repositorio de GitHub
 
 2. **Configuración del servicio**:
-   - **Name**: `ai-ticket-processor-api` (o el nombre que prefieras)
+   - **Name**: `tu-api-name` (o el nombre que prefieras)
    - **Region**: Elige la región más cercana
    - **Branch**: `main` (o la rama que uses)
    - **Root Directory**: `python-api` ⚠️ **IMPORTANTE**

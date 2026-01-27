@@ -28,7 +28,7 @@ Antes de desplegar, asegúrate de tener:
 ### Paso 2: Configuración Básica
 
 ```
-Name: ai-ticket-processor-api
+Name: tu-api-name
 Region: Virginia (US East) o la más cercana
 Branch: main
 Root Directory: python-api ⚠️ IMPORTANTE
@@ -151,7 +151,7 @@ Si quieres recibir notificaciones por email y Telegram cuando un ticket tiene se
 2. Agrega las siguientes variables:
    - `EMAIL_FROM` → tu correo de Gmail
    - `EMAIL_TO` → correo destinatario
-   - `FRONTEND_URL` → URL de tu frontend en Vercel (ej: `https://ai-ticket-processor.vercel.app`)
+   - `FRONTEND_URL` → URL de tu frontend en Vercel (ej: `https://tu-app.vercel.app`)
      - ⚠️ **Importante**: Esta URL se usa para generar links directos a los tickets en las notificaciones
    - `TELEGRAM_BOT_TOKEN` → token de tu bot de Telegram (opcional)
    - `TELEGRAM_CHAT_ID` → ID del chat/grupo/canal de Telegram (opcional)

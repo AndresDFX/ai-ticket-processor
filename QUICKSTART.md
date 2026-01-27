@@ -228,7 +228,7 @@ La API llama automáticamente al webhook de n8n cuando detecta un ticket con sen
 2. Agrega:
    - `EMAIL_FROM` → tu correo
    - `EMAIL_TO` → correo destinatario
-   - `FRONTEND_URL` → URL de tu frontend desplegado (ej: `https://ai-ticket-processor.vercel.app`)
+   - `FRONTEND_URL` → URL de tu frontend desplegado (ej: `https://tu-app.vercel.app`)
      - ⚠️ **Importante**: Esta URL se usa para generar links directos a los tickets en las notificaciones
 3. Guarda
 
